@@ -1,46 +1,64 @@
-import(
+package main
+
+import (
   "fmt"
-  "time"
-  con_load.go
-  elevator_io_device.go
-  fsm.go
-  timer.go
-)
-
-func main()  {
-  fmt.Println("Why are you runnin'?\n")
-  inputPollRate_ms := 25
-  con_load("elevator.con", con_val("inputPollRate_ms", &inputPollRate_ms, "&d")
+  "./elevio"
+  "./fsm"
+  "./requests"
   )
-  var input ElevInputDevice = elevio_getInputDevice()
-  if input.floorSensor() == -1 {
-    fsm_onInitBetweenFloor()
-  }
-  for {
-    //Request button
-    prev := [NumFloors][NumButtons]int{}
-    for f := 0; f < NumFloors; f++ {
-      for b := 0 b < NumButtons; b++ {
-        v := input.requestButton(f,b)
-        if v && v != prev[f][b] {
-          fsm_onRequestButtonPress(f,b)
-        }
-        prev[f][b] = v
-      }
-    }
-  }
-  //Floor sensor
-  var prev
-  f := input.floorSensor()
-  if f != -1 && f != prev {
-    fsm_onFloorArrival(f)
-  }
-  prev = f
 
-  //Timer
-  if timer_timedOut() {
-    fsm_onDoorTimeout()
-    timer_stop()
-  }
-  time.Sleep(time.Millisecond * 1000)
+func main(){
+
+    numFloors := 4
+
+    elevio.Init("localhost:15657", numFloors)
+
+    var d elevio.MotorDirection = elevio.MD_Up
+    //elevio.SetMotorDirection(d)
+
+    drv_buttons := make(chan elevio.ButtonEvent)
+    drv_floors  := make(chan int)
+    drv_obstr   := make(chan bool)
+    drv_stop    := make(chan bool)
+
+
+    go elevio.PollButtons(drv_buttons)
+    go elevio.PollFloorSensor(drv_floors)
+    go elevio.PollObstructionSwitch(drv_obstr)
+    go elevio.PollStopButton(drv_stop)
+
+
+    for {
+        select {
+        case a := <- drv_buttons:
+            fmt.Printf("%+v\n", a)
+            elevio.SetButtonLamp(a.Button, a.Floor, true)
+
+        case a := <- drv_floors:
+            fmt.Printf("%+v\n", a)
+            if a == numFloors-1 {
+                d = elevio.MD_Down
+            } else if a == 0 {
+                d = elevio.MD_Up
+            }
+            elevio.SetMotorDirection(d)
+
+
+        case a := <- drv_obstr:
+            fmt.Printf("%+v\n", a)
+            if a {
+                elevio.SetMotorDirection(elevio.MD_Stop)
+            } else {
+                elevio.SetMotorDirection(d)
+            }
+
+        case a := <- drv_stop:
+            fmt.Printf("%+v\n", a)
+            for f := 0; f < numFloors; f++ {
+                for b := elevio.ButtonType(0); b < 3; b++ {
+                    elevio.SetButtonLamp(b, f, false)
+                }
+            }
+        }
+    }
 }

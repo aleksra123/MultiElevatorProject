@@ -1,13 +1,13 @@
-//package something
+package requests
 
 import(
-  "elevator_io.go"
+  . "../elevio" //Explicit ?
 )
 
-func requests_above(e Elevator) int {
+func check_above(e Elevator) int {
   for floor := e.Floor + 1; floor < _numFloors; floor++ {
     for button := 0; button < _numButtons; button++ {
-      if(e.Queue[floor][button]){ // ==true --> order
+      if(e.Requests[floor][button]){ // ==true --> order
         return 1
       }
     }
@@ -15,10 +15,10 @@ func requests_above(e Elevator) int {
   return 0
 }
 
-func requests_below(e Elevator) int {
+func check_below(e Elevator) int {
   for floor := 0; floor < e.Floor; floor++{
     for button := 0; button < _numButtons; button++ {
-      if(e.Queue[floor][button]){
+      if(e.Requests[floor][button]){
         return 1
       }
     }
@@ -26,28 +26,28 @@ func requests_below(e Elevator) int {
   return 0;
 }
 
-func requests_chooseDirection(e Elevator) MotorDirection {
+func chooseDirection(e Elevator) MotorDirection {
   switch e.Dir{
   case MD_Up:
-    if requests_above(e) {
+    if check_above(e) {
       return MD_Up
-    } else if requests_below(e) {
+    } else if check_below(e) {
       return MD_Down
     } else {
       return MD_Stop
     }
   case MD_Down: //Compared to C-code. Is this redundant?
-    if requests_below(e) {
+    if check_below(e) {
       return MD_Down
-    } else if requests_above(e) {
+    } else if check_above(e) {
       return MD_Up
     } else {
       return MD_Stop
     }
   case MD_Stop: //Only one request. Arbitrary if we check up or down first
-    if requests_below(e) {
+    if check_below(e) {
       return MD_Down
-    } else if requests_above(e) {
+    } else if check_above(e) {
       return MD_Up
     } else {
       return MD_Stop
@@ -57,21 +57,21 @@ func requests_chooseDirection(e Elevator) MotorDirection {
   }
 }
 
-func requests_shouldStop(e Elevator) int{
+func shouldStop(e Elevator) int{
   switch e.Dir {
   case MD_Down:
-    return e.Queue[e.Floor][BT_HallDown] || e.Queue[e.Floor][BT_Cab] || !requests_below(e)
+    return e.Requests[e.Floor][BT_HallDown] || e.Requests[e.Floor][BT_Cab] || !check_below(e)
   case MD_Up:
-    return e.Queue[e.Floor][BT_HallUp] || e.Queue[e.Floor][BT_Cab] || !requests_above(e)
+    return e.Requests[e.Floor][BT_HallUp] || e.Requests[e.Floor][BT_Cab] || !check_above(e)
   case MD_Stop:
   default:
     return 1
   }
 }
 
-func requests_clearAtCurrentFloor(e Elevator) Elevator{
+func clearAtCurrentFloor(e Elevator) Elevator{
   for button := 0; button < _numButtons; button++ {
-    e.Queue[e.Floor][button]  = 0
+    e.Requests[e.Floor][button]  = 0
   }
   return e //Why does it return an elevator-type?
 }
