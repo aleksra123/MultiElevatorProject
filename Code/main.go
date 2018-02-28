@@ -18,9 +18,9 @@ func main()  {
   }
   for {
     //Request button
-    prev := [N_FLOORS][N_BUTTONS]int{}
-    for f := 0; f < N_FLOORS; f++ {
-      for b := 0 b < N_BUTTONS; b++ {
+    prev := [NumFloors][NumButtons]int{}
+    for f := 0; f < NumFloors; f++ {
+      for b := 0 b < NumButtons; b++ {
         v := input.requestButton(f,b)
         if v && v != prev[f][b] {
           fsm_onRequestButtonPress(f,b)

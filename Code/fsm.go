@@ -1,17 +1,19 @@
 import(
-  con_load.go
-  elevator.go
-  elevator_io_device.go
-  requests.go
-  timer.go
+  "fmt"
+  "time"
+  //con_load.go
+  //elevator.go
+  //elevator_io_device.go
+  //requests.go
+  //timer.go
 )
 
 var Elevator elevator
 var ElevOutputDevice outputDevice
 
 func setAllLights(es Elevator)  {
-  for floor := 0; floor < N_FLOORS; floor++ {
-    for btn := 0; btn < N_BUTTONS; btn++ {
+  for floor := 0; floor < NumFloors; floor++ {
+    for btn := 0; btn < NumButtons; btn++ {
       outputDevice.requestButtonLight(floor, btn, es.request[floor][btn])
     }
   }
