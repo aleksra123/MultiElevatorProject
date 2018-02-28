@@ -12,6 +12,7 @@ const _pollRate = 20 * time.Millisecond
 var _initialized bool = false
 var _numFloors int = 4
 var _numButtons int = 3
+var _numElevators int = 3
 var _mtx sync.Mutex
 var _conn net.Conn
 
@@ -34,8 +35,45 @@ const (
 type ButtonEvent struct {
 	Floor  int
 	Button ButtonType
+	//DesignatedElevator int
+	//Done               bool
+	// 			^are these variables necessary?
 }
 
+type Ack int
+
+const(
+	Finished Ack = iota //0
+	NotAcked //1
+	Acked //2
+)
+
+type ElevatorState int
+
+const(
+	Undefined ElevatorState = iota - 1
+	Idle
+	Moving
+	DoorOpen
+)
+
+type Elevator struct{
+	State ElevatorState
+	Dir MotorDirection
+	Floor int
+	Queue [_numFloors][_numButtons]bool
+}
+
+type AckList struct {
+	DesignatedElevator int
+	ImplicitAcks [_numElevators]Ack
+}
+
+type Message struct {
+	Elevator [_numElevators]Elev
+	RegisteredOrders [_numFloors][_numButtons-1]AckList
+	ID int
+}
 
 func Init(addr string, numFloors int) {
 	if _initialized {
