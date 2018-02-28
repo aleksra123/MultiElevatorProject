@@ -1,21 +1,26 @@
 package main
 
 import "./elevio"
+//import "../config"
 import "fmt"
+import "time"
+import "flag"
 import "../Network-go-master/network/bcast"
-
+import "../Network-go-master/network/peers"
 //import "../Network-go-master/network/localip"
-//import "../Network-go-master/network/peers"
+
+
+
 
 func main() {
 	const (
 		numFloors  = 4
 		numButtons = 3
 	)
-	elevio.Init("localhost:15657", numFloors)
+	elevio.Init("localhost:20022", numFloors)
 
 	var d elevio.MotorDirection = elevio.MD_Up
-	elevio.SetMotorDirection(d)
+	//elevio.SetMotorDirection(d)
 
 	drv_buttons := make(chan elevio.ButtonEvent)
 	drv_floors := make(chan int)
@@ -27,56 +32,73 @@ func main() {
 	go elevio.PollObstructionSwitch(drv_obstr)
 	go elevio.PollStopButton(drv_stop)
 
-	type HelloMsg struct {
-		Elevator    int
-		orderMatrix [numFloors]int
-		Iter        int
+	type ElevMsg struct {
+		ElevatorID    string
+		OrderMatrix [numFloors][numButtons-1]int
+		//Iter        int
 	}
 
-	msgTrans := make(chan HelloMsg)
-	msgRec := make(chan HelloMsg)
+	// type AckMsg struct {
+	// 	ThisElevID	string
+	// 	AckedOrders [numFloors][numButtons-1]config.Acknowledge
+	// }
+
+	var id string
+	flag.StringVar(&id, "id", "", "id of this peer")
+	flag.Parse()
+
+	 peerUpdateCh := make(chan peers.PeerUpdate)
+	 peerTxEnable := make(chan bool)
+	 go peers.Transmitter(15231, id, peerTxEnable)
+	 go peers.Receiver(15231, peerUpdateCh)
+
+	msgTrans := make(chan ElevMsg)
+	msgRec := make(chan ElevMsg)
 
 	go bcast.Transmitter(25000, msgTrans)
 	go bcast.Receiver(25000, msgRec)
 
-	OM := [numFloors]int{}
+	var OM = [numFloors][numButtons-1]int{}
 
-	testmsg := HelloMsg{1, OM, 3}
-	//fmt.Println(testmsg.orderMatrix)
+	testmsg := ElevMsg{id, OM}
+	go func() {
 
-	// for {
-	// 	select {
-	// 	case a := <-msgRec:
-	// 		fmt.Printf("Received: %#v\n", a)
-	// 	}
-	// }
-	//var OrderQueue = []elevio.ButtonEvent{}
+		for {
+			msgTrans <- testmsg
+			time.Sleep(4 * time.Second)
+		}
+	}()
+
+
 
 	for {
 		select {
 		case a := <-drv_buttons:
 			fmt.Printf("%+v\n", a)
 			elevio.SetButtonLamp(a.Button, a.Floor, true)
-			//OrderQueue = append(OrderQueue, a)
-			//fmt.Println(OrderQueue)
-			OM[a.Floor] = 1
-			testmsg.orderMatrix[a.Floor] = OM[a.Floor]
+			testmsg.OrderMatrix[a.Floor][a.Button] = 1
 			//fmt.Println(testmsg.orderMatrix)
-			testmsg.Elevator = 5
-			testmsg.Iter = 100
-			msgTrans <- testmsg
+			//msgTrans <- testmsg
+
+		case p := <-peerUpdateCh:
+			fmt.Printf("Peer update:\n")
+			fmt.Printf("  Peers:    %q\n", p.Peers)
+			fmt.Printf("  New:      %q\n", p.New)
+			fmt.Printf("  Lost:     %q\n", p.Lost)
+
 
 		case a := <-msgRec:
 			fmt.Printf("Received: %#v\n", a)
+			
 
-		case a := <-drv_floors:
-			fmt.Printf("%+v\n", a)
-			if a == numFloors-1 {
-				d = elevio.MD_Down
-			} else if a == 0 {
-				d = elevio.MD_Up
-			}
-			elevio.SetMotorDirection(d)
+		// case a := <-drv_floors:
+		// 	fmt.Printf("%+v\n", a)
+		// 	if a == numFloors-1 {
+		// 		d = elevio.MD_Down
+		// 	} else if a == 0 {
+		// 		d = elevio.MD_Up
+		// 	}
+		// 	elevio.SetMotorDirection(d)
 
 		case a := <-drv_obstr:
 			fmt.Printf("%+v\n", a)
