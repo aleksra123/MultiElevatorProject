@@ -11,6 +11,8 @@ import(
 var elevator elevio.Elevator
 //var outputDevice ElevOutputDevice ??
 
+var door_timer time.Timer
+
 func setAllLights(es elevio.Elevator)  {
   for floor := 0; floor < elevio._numFloors; floor++ {
     for btn := 0; btn < elevio._numButtons; btn++ {
@@ -35,7 +37,7 @@ func onRequestButtonPress(btn_floor int, btn_type ButtonType)  {
   switch elevator.State {
   case elevator.DoorOpen:
     if elevator.Floor == btn_floor {
-      timer_start(elevator.config.doorOpenDuration_s) //???
+      door_timer.NewTimer(3 * time.Second)
     }
     else{
       elevator.Requests[btn_floor][btn_type] = 1
@@ -48,7 +50,7 @@ func onRequestButtonPress(btn_floor int, btn_type ButtonType)  {
   case elevio.Idle:
     if elevator.Floor == btn_floor {
       elevio.SetDoorOpenLamp(true)
-      timer_start(elevator.config.doorOpenDuration_s) //??
+      door_timer.NewTimer(3 * time.Second)
       elevator.State = elevio.DoorOpen
     }
     else {
@@ -75,7 +77,7 @@ func onFloorArrival(newFloor int){
       elevio.SetMotorDirection(elevio.MD_Stop)
       elevio.SetDoorOpenLamp(true)
       elevator = Requests.clearAtCurrentFloor(elevator)
-      timer_start(elevator.config.doorOpenDuration_s) //???
+      door_timer.NewTimer(3 * time.Second)
       setAllLights(elevator)
       elevator.State = elevio.DoorOpen
     }
@@ -88,15 +90,13 @@ func onFloorArrival(newFloor int){
 }
 
 func onDoorTimeout()  {
-  //fmt.Println() //Weird shit igjen
-  //elevator_print(elevator)
   switch elevator.State {
   case elevio.DoorOpen:
     elevator.Dir = requests.chooseDirection(elevator)
     elevio.SetDoorOpenLamp(false)
     elevio.SetMotorDirection(elevator.Dir)
     if elevator.Dir == elevio.MD_Stop {
-      elevator.state = elevio.Idle
+      elevator.State = elevio.Idle
     }
     else {
       elevator.State = elevio.Moving
@@ -105,6 +105,4 @@ func onDoorTimeout()  {
   default:
     break
   }
-  //fmt.Println("\nNew state:\n")
-  //elevator_print(elevator)
 }
