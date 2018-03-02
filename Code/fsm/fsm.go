@@ -14,18 +14,22 @@ var elevator elevio.Elevator
 func setAllLights(es elevio.Elevator)  {
   for floor := 0; floor < elevio._numFloors; floor++ {
     for btn := 0; btn < elevio._numButtons; btn++ {
-      elevio.SetButtonLamp(btn, floor, true)
+      if elevator.Requests[floor][button] == true {
+        elevio.SetButtonLamp(btn, floor, true)
+      } else{
+        elevio.SetButtonLamp(btn, floor, false)
+      }
     }
   }
 }
 
-func fsm_onInitBetweenFloors(){
+func onInitBetweenFloors(){
   elevio.SetMotorDirection(elevio.MD_Down)
   elevator.Dir = elevio.MD_Down
   elevator.State = elevio.Moving
 }
 
-func fsm_onRequestButtonPress(btn_floor int, btn_type ButtonType)  {
+func onRequestButtonPress(btn_floor int, btn_type ButtonType)  {
   //fmt.Println(btn_floor, elevio_button_toString(btn_type)) //Mangler to første argumenter
   //elevator_print(elevator)
   switch elevator.State {
@@ -35,6 +39,7 @@ func fsm_onRequestButtonPress(btn_floor int, btn_type ButtonType)  {
     }
     else{
       elevator.Requests[btn_floor][btn_type] = 1
+
     }
     break
   case elevator.Moving:
@@ -44,7 +49,7 @@ func fsm_onRequestButtonPress(btn_floor int, btn_type ButtonType)  {
     if elevator.Floor == btn_floor {
       elevio.SetDoorOpenLamp(true)
       timer_start(elevator.config.doorOpenDuration_s) //??
-      elevator.State = elevio.Moving
+      elevator.State = elevio.DoorOpen
     }
     else {
       elevator.Requests[btn_floor][btn_type] = 1
@@ -54,12 +59,12 @@ func fsm_onRequestButtonPress(btn_floor int, btn_type ButtonType)  {
     }
     break
   }
-  setAllLights(elevator)
+  setAllLights(elevator) //
   //fmt.Println("\nNew state:\n")
   //elevator_print(elevator)
 }
 
-func fsm_onFloorArrival(newFloor int){
+func onFloorArrival(newFloor int){
   fmt.Println(newFloor) //Er noe rart her også
   //elevator_print(elevator)
   elevator.Floor = newFloor
@@ -69,7 +74,7 @@ func fsm_onFloorArrival(newFloor int){
     if requests.shouldStop(elevator) {
       elevio.SetMotorDirection(elevio.MD_Stop)
       elevio.SetDoorOpenLamp(true)
-      elevator = requests.clearAtCurrentFloor(elevator)
+      elevator = Requests.clearAtCurrentFloor(elevator)
       timer_start(elevator.config.doorOpenDuration_s) //???
       setAllLights(elevator)
       elevator.State = elevio.DoorOpen
@@ -82,14 +87,14 @@ func fsm_onFloorArrival(newFloor int){
   //elevator_print(elevator)
 }
 
-func fsm_onDoorTimeout()  {
+func onDoorTimeout()  {
   //fmt.Println() //Weird shit igjen
   //elevator_print(elevator)
   switch elevator.State {
   case elevio.DoorOpen:
     elevator.Dir = requests.chooseDirection(elevator)
-    elevator.SetDoorOpenLamp(false)
-    elevator.SetMotorDirection(elevator.Dir)
+    elevio.SetDoorOpenLamp(false)
+    elevio.SetMotorDirection(elevator.Dir)
     if elevator.Dir == elevio.MD_Stop {
       elevator.state = elevio.Idle
     }

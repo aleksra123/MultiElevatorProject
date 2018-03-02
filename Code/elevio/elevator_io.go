@@ -5,14 +5,18 @@ import "sync"
 import "net"
 import "fmt"
 
+//Should constants be a separate file?
+//Not to interfer with io. Like states, Ack.
 
 
 const _pollRate = 20 * time.Millisecond
 
 var _initialized bool = false
+
 var _numFloors int = 4
 var _numButtons int = 3
 var _numElevators int = 3
+
 var _mtx sync.Mutex
 var _conn net.Conn
 
@@ -61,7 +65,7 @@ type Elevator struct{
 	State ElevatorState
 	Dir MotorDirection
 	Floor int
-	Queue [_numFloors][_numButtons]bool
+	Requests [_numFloors][_numButtons]bool
 }
 
 type AckList struct {
@@ -75,12 +79,12 @@ type Message struct {
 	ID int
 }
 
-func Init(addr string, numFloors int) {
+func Init(addr string) {
 	if _initialized {
 		fmt.Println("Driver already initialized!")
 		return
 	}
-	_numFloors = numFloors
+
 	_mtx = sync.Mutex{}
 	var err error
 	_conn, err = net.Dial("tcp", addr)

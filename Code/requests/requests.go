@@ -72,6 +72,6 @@ func shouldStop(e Elevator) int{
 func clearAtCurrentFloor(e Elevator) Elevator{
   for button := 0; button < _numButtons; button++ {
     e.Requests[e.Floor][button]  = 0
-  }
+  } //Clears both directions  
   return e //Why does it return an elevator-type?
 }
