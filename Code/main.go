@@ -13,13 +13,13 @@ func main(){
     fsm.elevator.State = Undefined
 
     var d elevio.MotorDirection = elevio.MD_Up
-    //elevio.SetMotorDirection(d)
+    elevio.SetMotorDirection(d)
 
     drv_buttons := make(chan elevio.ButtonEvent)
-    drv_floors  := make(chan typean int)
+    drv_floors  := make(chan int)
     drv_obstr   := make(chan bool)
     drv_stop    := make(chan bool)
-    drv_timeout := make(chan bool) //??
+    drv_timeout := fsm.door_timer.C 
 
     go elevio.PollButtons(drv_buttons)
     go elevio.PollFloorSensor(drv_floors)
@@ -63,6 +63,9 @@ func main(){
                     elevio.SetButtonLamp(b, f, false)
                 }
             }
+        case a:= <- drv_timeout:
+            onDoorTimeout()
+
         }
     }
 }
