@@ -16,7 +16,7 @@ func main() {
 		numFloors  = 4
 		numButtons = 3
 	)
-	elevio.Init("localhost:20016", numFloors)
+	elevio.Init("localhost:20022", numFloors)
 
 	var d elevio.MotorDirection = elevio.MD_Up
 	//elevio.SetMotorDirection(d)
