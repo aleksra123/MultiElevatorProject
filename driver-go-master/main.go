@@ -1,23 +1,22 @@
 package main
 
 import "./elevio"
+
 //import "../config"
 import "fmt"
 import "time"
 import "flag"
 import "../Network-go-master/network/bcast"
 import "../Network-go-master/network/peers"
+
 //import "../Network-go-master/network/localip"
-
-
-
 
 func main() {
 	const (
 		numFloors  = 4
 		numButtons = 3
 	)
-	elevio.Init("localhost:20022", numFloors)
+	elevio.Init("localhost:20016", numFloors)
 
 	var d elevio.MotorDirection = elevio.MD_Up
 	//elevio.SetMotorDirection(d)
@@ -33,8 +32,8 @@ func main() {
 	go elevio.PollStopButton(drv_stop)
 
 	type ElevMsg struct {
-		ElevatorID    string
-		OrderMatrix [numFloors][numButtons-1]int
+		ElevatorID  string
+		OrderMatrix [numFloors][numButtons - 1]int
 		//Iter        int
 	}
 
@@ -47,10 +46,10 @@ func main() {
 	flag.StringVar(&id, "id", "", "id of this peer")
 	flag.Parse()
 
-	 peerUpdateCh := make(chan peers.PeerUpdate)
-	 peerTxEnable := make(chan bool)
-	 go peers.Transmitter(15231, id, peerTxEnable)
-	 go peers.Receiver(15231, peerUpdateCh)
+	peerUpdateCh := make(chan peers.PeerUpdate)
+	peerTxEnable := make(chan bool)
+	go peers.Transmitter(15231, id, peerTxEnable)
+	go peers.Receiver(15231, peerUpdateCh)
 
 	msgTrans := make(chan ElevMsg)
 	msgRec := make(chan ElevMsg)
@@ -58,7 +57,7 @@ func main() {
 	go bcast.Transmitter(25000, msgTrans)
 	go bcast.Receiver(25000, msgRec)
 
-	var OM = [numFloors][numButtons-1]int{}
+	var OM = [numFloors][numButtons - 1]int{}
 
 	testmsg := ElevMsg{id, OM}
 	go func() {
@@ -68,8 +67,6 @@ func main() {
 			time.Sleep(4 * time.Second)
 		}
 	}()
-
-
 
 	for {
 		select {
@@ -86,10 +83,8 @@ func main() {
 			fmt.Printf("  New:      %q\n", p.New)
 			fmt.Printf("  Lost:     %q\n", p.Lost)
 
-
 		case a := <-msgRec:
 			fmt.Printf("Received: %#v\n", a)
-			
 
 		// case a := <-drv_floors:
 		// 	fmt.Printf("%+v\n", a)
