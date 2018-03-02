@@ -5,12 +5,14 @@ import "sync"
 import "net"
 import "fmt"
 
+
+
 const _pollRate = 20 * time.Millisecond
 
 var _initialized bool = false
-var _numButtons = 3
 var _numFloors int = 4
 var _numButtons int = 3
+var _numElevators int = 3
 var _mtx sync.Mutex
 var _conn net.Conn
 
@@ -33,12 +35,46 @@ const (
 type ButtonEvent struct {
 	Floor  int
 	Button ButtonType
+	//DesignatedElevator int
+	//Done               bool
+	// 			^are these variables necessary?
 }
 
-<<<<<<< HEAD
-=======
+type Ack int
 
->>>>>>> origin/anders
+const(
+	Finished Ack = iota //0
+	NotAcked //1
+	Acked //2
+)
+
+type ElevatorState int
+
+const(
+	Undefined ElevatorState = iota - 1
+	Idle
+	Moving
+	DoorOpen
+)
+
+type Elevator struct{
+	State ElevatorState
+	Dir MotorDirection
+	Floor int
+	Queue [_numFloors][_numButtons]bool
+}
+
+type AckList struct {
+	DesignatedElevator int
+	ImplicitAcks [_numElevators]Ack
+}
+
+type Message struct {
+	Elevator [_numElevators]Elev
+	RegisteredOrders [_numFloors][_numButtons-1]AckList
+	ID int
+}
+
 func Init(addr string, numFloors int) {
 	if _initialized {
 		fmt.Println("Driver already initialized!")
@@ -54,10 +90,7 @@ func Init(addr string, numFloors int) {
 	_initialized = true
 }
 
-<<<<<<< HEAD
-=======
 
->>>>>>> origin/anders
 func SetMotorDirection(dir MotorDirection) {
 	_mtx.Lock()
 	defer _mtx.Unlock()
@@ -88,10 +121,7 @@ func SetStopLamp(value bool) {
 	_conn.Write([]byte{5, toByte(value), 0, 0})
 }
 
-<<<<<<< HEAD
-=======
 
->>>>>>> origin/anders
 func PollButtons(receiver chan<- ButtonEvent) {
 	prev := make([][3]bool, _numFloors)
 	for {
@@ -144,11 +174,8 @@ func PollObstructionSwitch(receiver chan<- bool) {
 	}
 }
 
-<<<<<<< HEAD
-=======
 
 
->>>>>>> origin/anders
 func getButton(button ButtonType, floor int) bool {
 	_mtx.Lock()
 	defer _mtx.Unlock()
