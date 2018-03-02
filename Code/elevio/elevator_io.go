@@ -8,14 +8,15 @@ import "fmt"
 //Should constants be a separate file?
 //Not to interfer with io. Like states, Ack.
 
-
 const _pollRate = 20 * time.Millisecond
 
 var _initialized bool = false
 
-var _numFloors int = 4
-var _numButtons int = 3
-var _numElevators int = 3
+const (
+	NumFloors    = 4
+	NumButtons   = 3
+	NumElevators = 3
+)
 
 var _mtx sync.Mutex
 var _conn net.Conn
@@ -46,37 +47,37 @@ type ButtonEvent struct {
 
 type Ack int
 
-const(
+const (
 	Finished Ack = iota //0
-	NotAcked //1
-	Acked //2
+	NotAcked            //1
+	Acked               //2
 )
 
 type ElevatorState int
 
-const(
+const (
 	Undefined ElevatorState = iota - 1
 	Idle
 	Moving
 	DoorOpen
 )
 
-type Elevator struct{
-	State ElevatorState
-	Dir MotorDirection
-	Floor int
-	Requests [_numFloors][_numButtons]bool
+type Elevator struct {
+	State    ElevatorState
+	Dir      MotorDirection
+	Floor    int
+	Requests [NumFloors][NumButtons]bool
 }
 
 type AckList struct {
 	DesignatedElevator int
-	ImplicitAcks [_numElevators]Ack
+	ImplicitAcks       [NumElevators]Ack
 }
 
 type Message struct {
-	Elevator [_numElevators]Elev
-	RegisteredOrders [_numFloors][_numButtons-1]AckList
-	ID int
+	Elevator         [NumElevators]Elevator
+	RegisteredOrders [NumFloors][NumButtons - 1]AckList
+	ID               int
 }
 
 func Init(addr string) {
@@ -93,7 +94,6 @@ func Init(addr string) {
 	}
 	_initialized = true
 }
-
 
 func SetMotorDirection(dir MotorDirection) {
 	_mtx.Lock()
@@ -125,12 +125,11 @@ func SetStopLamp(value bool) {
 	_conn.Write([]byte{5, toByte(value), 0, 0})
 }
 
-
 func PollButtons(receiver chan<- ButtonEvent) {
-	prev := make([][3]bool, _numFloors)
+	prev := make([][3]bool, NumFloors)
 	for {
 		time.Sleep(_pollRate)
-		for f := 0; f < _numFloors; f++ {
+		for f := 0; f < NumFloors; f++ {
 			for b := ButtonType(0); b < 3; b++ {
 				v := getButton(b, f)
 				if v != prev[f][b] && v != false {
@@ -177,8 +176,6 @@ func PollObstructionSwitch(receiver chan<- bool) {
 		prev = v
 	}
 }
-
-
 
 func getButton(button ButtonType, floor int) bool {
 	_mtx.Lock()
