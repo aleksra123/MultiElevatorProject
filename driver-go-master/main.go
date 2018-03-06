@@ -6,6 +6,7 @@ import "./elevio"
 import "fmt"
 import "time"
 import "flag"
+import "os"
 import "../Network-go-master/network/bcast"
 import "../Network-go-master/network/peers"
 
@@ -16,7 +17,8 @@ func main() {
 		numFloors  = 4
 		numButtons = 3
 	)
-	elevio.Init("localhost:20022", numFloors)
+	port := ':' + os.Args[2]
+	elevio.Init(port, numFloors)
 
 	var d elevio.MotorDirection = elevio.MD_Up
 	//elevio.SetMotorDirection(d)
