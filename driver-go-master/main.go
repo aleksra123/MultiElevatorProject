@@ -62,7 +62,7 @@ func main() {
 
 	var OM = [numFloors][numButtons - 1]int{}
 	//var AckMat = [numFloors][numButtons - 1]int{}
-	var BP = [2]int{-1, -1}
+	var BP = [2]int{}
 
 	testmsg := ElevMsg{id, OM, BP}
 	go func() {
