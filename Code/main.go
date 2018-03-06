@@ -26,15 +26,10 @@ func main() {
 
 	select { //Init
 	case <-drv_floors:
-		fmt.Println("case 1")
 		elevio.SetMotorDirection(elevio.MD_Stop)
 		fsm.Elev.State = elevio.Idle
 	default:
-		fmt.Println("case default")
-		//fsm.OnInitBetweenFloors()
-		elevio.SetMotorDirection(elevio.MD_Down)
-		fsm.Elev.Dir = elevio.MD_Down
-		fsm.Elev.State = elevio.Moving
+		fsm.OnInitBetweenFloors()
 	}
 
 	for {
