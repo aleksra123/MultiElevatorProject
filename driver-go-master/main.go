@@ -17,7 +17,7 @@ func main() {
 		numFloors  = 4
 		numButtons = 3
 	)
-	port := ':' + os.Args[2]
+	port := ":" + os.Args[2]
 	elevio.Init(port, numFloors)
 
 	var d elevio.MotorDirection = elevio.MD_Up
@@ -34,8 +34,9 @@ func main() {
 	go elevio.PollStopButton(drv_stop)
 
 	type ElevMsg struct {
-		ElevatorID  string
-		OrderMatrix [numFloors][numButtons - 1]int
+		ElevatorID   string
+		OrderMatrix  [numFloors][numButtons - 1]int
+		ButtonPushed [2]int
 		//Iter        int
 	}
 
@@ -60,8 +61,10 @@ func main() {
 	go bcast.Receiver(25000, msgRec)
 
 	var OM = [numFloors][numButtons - 1]int{}
+	var AckMat = [numFloors][numButtons - 1]int{}
+	var BP = {0,0}
 
-	testmsg := ElevMsg{id, OM}
+	testmsg := ElevMsg{id, OM, BP}
 	go func() {
 
 		for {
@@ -76,6 +79,8 @@ func main() {
 			fmt.Printf("%+v\n", a)
 			elevio.SetButtonLamp(a.Button, a.Floor, true)
 			testmsg.OrderMatrix[a.Floor][a.Button] = 1
+			testmsg.ButtonPushed[0] = a.Floor
+			testmsg.ButtonPushed[1] = a.Button
 			//fmt.Println(testmsg.orderMatrix)
 			//msgTrans <- testmsg
 
@@ -86,16 +91,12 @@ func main() {
 			fmt.Printf("  Lost:     %q\n", p.Lost)
 
 		case a := <-msgRec:
-			fmt.Printf("Received: %#v\n", a)
+			//fmt.Printf("Received: %#v\n", a)
+			if AckMat[a.ButtonPushed[0]][a.ButtonPushed[1]] < a.OrderMatrix[a.ButtonPushed[0]][a.ButtonPushed[1]] {
+				AckMat = a.OrderMatrix
+			}
 
-		// case a := <-drv_floors:
-		// 	fmt.Printf("%+v\n", a)
-		// 	if a == numFloors-1 {
-		// 		d = elevio.MD_Down
-		// 	} else if a == 0 {
-		// 		d = elevio.MD_Up
-		// 	}
-		// 	elevio.SetMotorDirection(d)
+			fmt.Printf("Received: %#v\n", AckMat)
 
 		case a := <-drv_obstr:
 			fmt.Printf("%+v\n", a)
