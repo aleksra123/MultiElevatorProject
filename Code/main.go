@@ -10,11 +10,8 @@ import (
 
 func main() {
 
-	elevio.Init("localhost:20016")
+	elevio.Init("localhost:15657") //200+arb.plass or 15657
 	fsm.Elev.State = elevio.Undefined
-
-	var d elevio.MotorDirection = elevio.MD_Up
-	elevio.SetMotorDirection(d)
 
 	drv_buttons := make(chan elevio.ButtonEvent)
 	drv_floors := make(chan int)
@@ -27,10 +24,18 @@ func main() {
 	go elevio.PollObstructionSwitch(drv_obstr)
 	go elevio.PollStopButton(drv_stop)
 
-	<-drv_floors
-	elevio.SetMotorDirection(elevio.MD_Stop)
-
-	fsm.Elev.State = elevio.Idle
+	select { //Init
+	case <-drv_floors:
+		fmt.Println("case 1")
+		elevio.SetMotorDirection(elevio.MD_Stop)
+		fsm.Elev.State = elevio.Idle
+	default:
+		fmt.Println("case default")
+		//fsm.OnInitBetweenFloors()
+		elevio.SetMotorDirection(elevio.MD_Down)
+		fsm.Elev.Dir = elevio.MD_Down
+		fsm.Elev.State = elevio.Moving
+	}
 
 	for {
 		select {
@@ -65,9 +70,11 @@ func main() {
 					elevio.SetButtonLamp(b, f, false)
 				}
 			}
+
 		case <-drv_timeout:
 			fsm.OnDoorTimeout()
-
+		default:
+			//fmt.Println(fsm.Elev.State)
 		}
 	}
 }

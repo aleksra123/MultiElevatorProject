@@ -96,6 +96,7 @@ func Init(addr string) {
 }
 
 func SetMotorDirection(dir MotorDirection) {
+	fmt.Println("setting motordir", dir)
 	_mtx.Lock()
 	defer _mtx.Unlock()
 	_conn.Write([]byte{1, byte(dir), 0, 0})
