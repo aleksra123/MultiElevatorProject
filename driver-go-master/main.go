@@ -6,7 +6,7 @@ import "./elevio"
 import "fmt"
 import "time"
 import "flag"
-import "os"
+//import "os"
 import "../Network-go-master/network/bcast"
 import "../Network-go-master/network/peers"
 
@@ -17,8 +17,8 @@ func main() {
 		numFloors  = 4
 		numButtons = 3
 	)
-	port := ":" + os.Args[2]
-	elevio.Init(port, numFloors)
+	//port := ":" + os.Args[2]
+	elevio.Init("localhost:20021", numFloors)
 
 	var d elevio.MotorDirection = elevio.MD_Up
 	//elevio.SetMotorDirection(d)
@@ -36,14 +36,9 @@ func main() {
 	type ElevMsg struct {
 		ElevatorID   string
 		OrderMatrix  [numFloors][numButtons - 1]int
-		ButtonPushed [2]int
+		//ButtonPushed [2]int
 		//Iter        int
 	}
-
-	// type AckMsg struct {
-	// 	ThisElevID	string
-	// 	AckedOrders [numFloors][numButtons-1]config.Acknowledge
-	// }
 
 	var id string
 	flag.StringVar(&id, "id", "", "id of this peer")
@@ -61,10 +56,10 @@ func main() {
 	go bcast.Receiver(25000, msgRec)
 
 	var OM = [numFloors][numButtons - 1]int{}
-	var AckMat = [numFloors][numButtons - 1]int{}
-	var BP = {0,0}
+	//var AckMat = [numFloors][numButtons - 1]int{}
+	//var BP = {0,0}
 
-	testmsg := ElevMsg{id, OM, BP}
+	testmsg := ElevMsg{id, OM}
 	go func() {
 
 		for {
@@ -79,8 +74,8 @@ func main() {
 			fmt.Printf("%+v\n", a)
 			elevio.SetButtonLamp(a.Button, a.Floor, true)
 			testmsg.OrderMatrix[a.Floor][a.Button] = 1
-			testmsg.ButtonPushed[0] = a.Floor
-			testmsg.ButtonPushed[1] = a.Button
+			//testmsg.ButtonPushed[0] = a.Floor
+			//testmsg.ButtonPushed[1] = a.Button
 			//fmt.Println(testmsg.orderMatrix)
 			//msgTrans <- testmsg
 
@@ -91,12 +86,12 @@ func main() {
 			fmt.Printf("  Lost:     %q\n", p.Lost)
 
 		case a := <-msgRec:
-			//fmt.Printf("Received: %#v\n", a)
-			if AckMat[a.ButtonPushed[0]][a.ButtonPushed[1]] < a.OrderMatrix[a.ButtonPushed[0]][a.ButtonPushed[1]] {
-				AckMat = a.OrderMatrix
-			}
+			fmt.Printf("Received: %#v\n", a)
+			//if AckMat[a.ButtonPushed[0]][a.ButtonPushed[1]] < a.OrderMatrix[a.ButtonPushed[0]][a.ButtonPushed[1]] {
+				//AckMat = a.OrderMatrix
+			//}
 
-			fmt.Printf("Received: %#v\n", AckMat)
+			//fmt.Printf("Received: %#v\n", AckMat)
 
 		case a := <-drv_obstr:
 			fmt.Printf("%+v\n", a)

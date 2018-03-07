@@ -37,18 +37,8 @@ func main() {
 		case a := <-drv_buttons:
 			fsm.OnRequestButtonPress(a.Floor, a.Button)
 
-			//fmt.Printf("%+v\n", a)
-
 		case a := <-drv_floors:
 			fsm.OnFloorArrival(a)
-
-			// fmt.Printf("%+v\n", a)
-			// if a == numFloors-1 {
-			//     d = elevio.MD_Down
-			// } else if a == 0 {
-			//     d = elevio.MD_Up
-			// }
-			// elevio.SetMotorDirection(d)
 
 		case a := <-drv_obstr: //Is this a part of the assigment?
 			fmt.Printf("%+v\n", a)
@@ -68,8 +58,6 @@ func main() {
 
 		case <-drv_timeout:
 			fsm.OnDoorTimeout()
-		default:
-			//fmt.Println(fsm.Elev.State)
 		}
 	}
 }
