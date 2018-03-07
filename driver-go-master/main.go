@@ -4,9 +4,9 @@ import "./elevio"
 
 //import "../config"
 import "fmt"
-import "time"
+//import "time"
 import "flag"
-//import "os"
+import "os"
 import "../Network-go-master/network/bcast"
 import "../Network-go-master/network/peers"
 
@@ -17,10 +17,11 @@ func main() {
 		numFloors  = 4
 		numButtons = 3
 	)
-	
-	//port := ":" + os.Args[2]
+
+
+	port := ":" + os.Args[2]
 	//elevio.Init(port, numFloors)
-	elevio.Init("localhost:20021", numFloors)
+	elevio.Init(port, numFloors)
 
 	var d elevio.MotorDirection = elevio.MD_Up
 	//elevio.SetMotorDirection(d)
@@ -38,11 +39,12 @@ func main() {
 	type ElevMsg struct {
 		ElevatorID   string
 		OrderMatrix  [numFloors][numButtons - 1]int
-		//ButtonPushed [2]int
+		ButtonPushed [2]int
 		//Iter        int
 	}
 
 	var id string
+	//id = "5"
 	flag.StringVar(&id, "id", "", "id of this peer")
 	flag.Parse()
 
@@ -58,26 +60,41 @@ func main() {
 	go bcast.Receiver(25000, msgRec)
 
 	var OM = [numFloors][numButtons - 1]int{}
-	//var AckMat = [numFloors][numButtons - 1]int{}
-	//var BP = [2]int{}
+	var AckMat = [numFloors][numButtons - 1]int{}
+	var BP = [2]int{}
 
-	testmsg := ElevMsg{id, OM}
-	go func() {
 
-		for {
-			msgTrans <- testmsg
-			time.Sleep(4 * time.Second)
-		}
-	}()
+	testmsg := ElevMsg{id, OM, BP}
+	// go func() {
+	//
+	// 		for {
+	// 			msgTrans <- testmsg
+	// 			time.Sleep(4 * time.Second)
+	// 		}
+	// }()
+	// go func() {
+	// 	fmt.Printf("komme eg hit")
+	// 	for i := 0; i < numFloors; i++{
+	// 		fmt.Printf("inni go func: %#v\n", AckMat)
+	// 		for j := 0; j < (numButtons-1); j++ {
+	// 			if AckMat[i][j] == 1 {
+	// 				elevio.SetButtonLamp(elevio.ButtonType(i), j, true)
+	// 			}
+	// 		}
+	// 	}
+	// }()
+
 
 	for {
 		select {
 		case a := <-drv_buttons:
 			fmt.Printf("%+v\n", a)
-			elevio.SetButtonLamp(a.Button, a.Floor, true)
-			testmsg.OrderMatrix[a.Floor][a.Button] = 1
-			//testmsg.ButtonPushed[0] = a.Floor
-			//testmsg.ButtonPushed[1] = int(a.Button)
+			//elevio.SetButtonLamp(a.Button, a.Floor, true)
+			testmsg.OrderMatrix[a.Floor][int(a.Button)] = 1
+			testmsg.ButtonPushed[1] = int(a.Button)
+			testmsg.ButtonPushed[0] = a.Floor
+			msgTrans <- testmsg
+			//fmt.Printf("Received: %#v\n", AckMat)
 			//fmt.Println(testmsg.orderMatrix)
 			//msgTrans <- testmsg
 
@@ -88,10 +105,18 @@ func main() {
 			fmt.Printf("  Lost:     %q\n", p.Lost)
 
 		case a := <-msgRec:
-			fmt.Printf("Received: %#v\n", a)
-			//if AckMat[a.ButtonPushed[0]][a.ButtonPushed[1]] < a.OrderMatrix[a.ButtonPushed[0]][a.ButtonPushed[1]] {
-			//AckMat = a.OrderMatrix
-			//}
+			//fmt.Printf("Received: %#v\n", a)
+
+			AckMat[a.ButtonPushed[0]][a.ButtonPushed[1]] = a.OrderMatrix[a.ButtonPushed[0]][a.ButtonPushed[1]]
+			fmt.Printf("Received: %#v\n", AckMat)
+			elevio.SetButtonLamp(elevio.ButtonType(a.ButtonPushed[1]), a.ButtonPushed[0], true)
+			// for i := 0; i < numFloors; i++{
+			// 		//fmt.Printf("inni go func: %#v\n", AckMat)
+			// 		for j := 0; j < (numButtons-1); j++ {
+			// 			if AckMat[i][j] == 1 {
+			// 				elevio.SetButtonLamp(elevio.ButtonType(i), j, true)
+			// 			}
+			// 		}
 
 			//fmt.Printf("Received: %#v\n", AckMat)
 
@@ -112,4 +137,5 @@ func main() {
 			}
 		}
 	}
+
 }
