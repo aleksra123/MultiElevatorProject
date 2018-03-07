@@ -11,12 +11,13 @@ import "../Network-go-master/network/bcast"
 import "../Network-go-master/network/peers"
 
 //import "../Network-go-master/network/localip"
-
+//project-proggeskuta/driver-go-master/
 func main() {
 	const (
 		numFloors  = 4
 		numButtons = 3
 	)
+	
 	//port := ":" + os.Args[2]
 	//elevio.Init(port, numFloors)
 	elevio.Init("localhost:20021", numFloors)
@@ -58,7 +59,7 @@ func main() {
 
 	var OM = [numFloors][numButtons - 1]int{}
 	//var AckMat = [numFloors][numButtons - 1]int{}
-	var BP = [2]int{}
+	//var BP = [2]int{}
 
 	testmsg := ElevMsg{id, OM}
 	go func() {
