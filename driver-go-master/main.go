@@ -57,7 +57,11 @@ func main() {
 
 	var OM = [numFloors][numButtons - 1]int{}
 	//var AckMat = [numFloors][numButtons - 1]int{}
+<<<<<<< HEAD
 	//var BP = {0,0}
+=======
+	var BP = [2]int{}
+>>>>>>> 942642933545fc7ff27d441fa9574fe29eda1ea1
 
 	testmsg := ElevMsg{id, OM}
 	go func() {
@@ -74,8 +78,13 @@ func main() {
 			fmt.Printf("%+v\n", a)
 			elevio.SetButtonLamp(a.Button, a.Floor, true)
 			testmsg.OrderMatrix[a.Floor][a.Button] = 1
+<<<<<<< HEAD
 			//testmsg.ButtonPushed[0] = a.Floor
 			//testmsg.ButtonPushed[1] = a.Button
+=======
+			testmsg.ButtonPushed[0] = a.Floor
+			testmsg.ButtonPushed[1] = int(a.Button)
+>>>>>>> 942642933545fc7ff27d441fa9574fe29eda1ea1
 			//fmt.Println(testmsg.orderMatrix)
 			//msgTrans <- testmsg
 
@@ -88,7 +97,11 @@ func main() {
 		case a := <-msgRec:
 			fmt.Printf("Received: %#v\n", a)
 			//if AckMat[a.ButtonPushed[0]][a.ButtonPushed[1]] < a.OrderMatrix[a.ButtonPushed[0]][a.ButtonPushed[1]] {
+<<<<<<< HEAD
 				//AckMat = a.OrderMatrix
+=======
+			//AckMat = a.OrderMatrix
+>>>>>>> 942642933545fc7ff27d441fa9574fe29eda1ea1
 			//}
 
 			//fmt.Printf("Received: %#v\n", AckMat)
