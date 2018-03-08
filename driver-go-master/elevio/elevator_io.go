@@ -8,9 +8,12 @@ import "fmt"
 const _pollRate = 20 * time.Millisecond
 
 var _initialized bool = false
-
-var _numFloors int = 4
-var _numButtons int = 3
+const(
+	NumFloors  = 4
+	NumButtons  = 3
+)
+ var _numFloors int = 4
+ var _numButtons int = 3
 var _mtx sync.Mutex
 var _conn net.Conn
 
@@ -35,7 +38,28 @@ type ButtonEvent struct {
 	Button ButtonType
 }
 
+type Direction int
+const (
+	DirDown Direction = iota - 1
+	DirStop
+	DirUp
+)
 
+type Elev struct {
+	State ElevState
+	Dir   Direction
+	Floor int
+	Queue [NumFloors][NumButtons]int
+}
+
+type ElevState int
+
+const (
+	Undefined ElevState = iota - 1
+	Idle
+	Moving
+	DoorOpen
+)
 
 func Init(addr string, numFloors int) {
 	if _initialized {
