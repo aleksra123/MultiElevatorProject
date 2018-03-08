@@ -9,6 +9,7 @@ import "flag"
 import "os"
 import "../Network-go-master/network/bcast"
 import "../Network-go-master/network/peers"
+import "strconv"
 
 //import "../Network-go-master/network/localip"
 //project-proggeskuta/driver-go-master/
@@ -16,8 +17,11 @@ func main() {
 	const (
 		numFloors  = 4
 		numButtons = 3
+		numElevators = 3
 	)
 
+	activeElevs := numElevators
+	activeElevs = 2 //becuase 2 in shell script atm
 
 	port := ":" + os.Args[2]
 	//elevio.Init(port, numFloors)
@@ -40,17 +44,20 @@ func main() {
 		ElevatorID   string
 		OrderMatrix  [numFloors][numButtons - 1]int
 		ButtonPushed [2]int
+
+
 		//Iter        int
 	}
 
 	var id string
+
 	//id = "5"
 	flag.StringVar(&id, "id", "", "id of this peer")
 	flag.Parse()
 
 	peerUpdateCh := make(chan peers.PeerUpdate)
 	peerTxEnable := make(chan bool)
-	go peers.Transmitter(15231, id, peerTxEnable)
+	go peers.Transmitter(15231, string(id), peerTxEnable)
 	go peers.Receiver(15231, peerUpdateCh)
 
 	msgTrans := make(chan ElevMsg)
@@ -60,8 +67,9 @@ func main() {
 	go bcast.Receiver(25000, msgRec)
 
 	var OM = [numFloors][numButtons - 1]int{}
-	var AckMat = [numFloors][numButtons - 1]int{}
+	var AckMat = [numElevators][numFloors][numButtons - 1]int{}
 	var BP = [2]int{}
+
 
 
 	testmsg := ElevMsg{id, OM, BP}
@@ -106,19 +114,34 @@ func main() {
 
 		case a := <-msgRec:
 			//fmt.Printf("Received: %#v\n", a)
+			var ID int
 
-			AckMat[a.ButtonPushed[0]][a.ButtonPushed[1]] = a.OrderMatrix[a.ButtonPushed[0]][a.ButtonPushed[1]]
-			fmt.Printf("Received: %#v\n", AckMat)
-			elevio.SetButtonLamp(elevio.ButtonType(a.ButtonPushed[1]), a.ButtonPushed[0], true)
-			// for i := 0; i < numFloors; i++{
-			// 		//fmt.Printf("inni go func: %#v\n", AckMat)
-			// 		for j := 0; j < (numButtons-1); j++ {
-			// 			if AckMat[i][j] == 1 {
-			// 				elevio.SetButtonLamp(elevio.ButtonType(i), j, true)
-			// 			}
-			// 		}
+			ID, _ = strconv.Atoi(a.ElevatorID)
+			fmt.Printf("ID: %d\n", ID)
+			AckMat[ID-1][a.ButtonPushed[0]][a.ButtonPushed[1]] = a.OrderMatrix[a.ButtonPushed[0]][a.ButtonPushed[1]]
+			//fmt.Printf("Received: %#v\n", AckMat[ID-1])
+			for i := 0; i < activeElevs; i++ {
+				if AckMat[i][a.ButtonPushed[0]][a.ButtonPushed[1]] < AckMat[ID-1][a.ButtonPushed[0]][a.ButtonPushed[1]]{
+					AckMat[i][a.ButtonPushed[0]][a.ButtonPushed[1]]++
+					fmt.Printf("we incremented! \n")
+				}
+			}
 
-			//fmt.Printf("Received: %#v\n", AckMat)
+
+			var counter int
+			for i := 0; i < activeElevs; i++ {
+					if AckMat[i][a.ButtonPushed[0]][a.ButtonPushed[1]] == 1 {
+					counter++
+				}
+			}
+			if counter == activeElevs{
+				for i := 0; i < activeElevs; i++ {
+					AckMat[i][a.ButtonPushed[0]][a.ButtonPushed[1]] = 2
+				}
+			}
+			fmt.Printf("Received: %#v\n", AckMat[ID-1])
+			//elevio.SetButtonLamp(elevio.ButtonType(a.ButtonPushed[1]), a.ButtonPushed[0], true)
+
 
 		case a := <-drv_obstr:
 			fmt.Printf("%+v\n", a)
@@ -129,6 +152,7 @@ func main() {
 			}
 
 		case a := <-drv_stop:
+
 			fmt.Printf("%+v\n", a)
 			for f := 0; f < numFloors; f++ {
 				for b := elevio.ButtonType(0); b < 3; b++ {
