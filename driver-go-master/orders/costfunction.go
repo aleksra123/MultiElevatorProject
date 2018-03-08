@@ -1,16 +1,16 @@
 import ".../elevio"
 
-func duplicateOrder(order elevio.Keypress, elevList [NumElevators]elevio.Elev, id int) bool {
+func duplicateOrder(order elevio.Keypress, elevList [elevio.NumElevators]elevio.Elev, id int) bool {
 	return (AcceptedOrdersMatrix[order.Floor][order.Btn]) //returns true if order already exists
 }
 
-func costCalculator(order Keypress, elevList [NumElevators]Elev, id int, onlineList [NumElevators]bool) int {
-	if order.Btn == BtnInside {
+func costCalculator(order elevio.Keypress, elevList [elevio.NumElevators]elevio.Elev, id int, onlineList [elevio.NumElevators]bool) int {
+	if order.Btn == elevio.BtnInside {
 		return id
 	}
-	minCost := (NumButtons * NumFloors) * NumElevators
+	minCost := (elevio.NumButtons * elevio.NumFloors) * elevio.NumElevators
 	bestElevator := id
-	for elevator := 0; elevator < NumElevators; elevator++ {
+	for elevator := 0; elevator < elevio.NumElevators; elevator++ {
 		if !onlineList[elevator] {
 			// Disregarding offline elevators
 			continue
