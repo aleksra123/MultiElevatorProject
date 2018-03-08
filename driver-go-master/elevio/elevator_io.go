@@ -38,6 +38,13 @@ type ButtonEvent struct {
 	Button ButtonType
 }
 
+type Keypress struct {
+	Floor              int
+	Btn                ButtonType
+	DesignatedElevator int
+	Done               bool
+}
+
 type Direction int
 const (
 	DirDown Direction = iota - 1

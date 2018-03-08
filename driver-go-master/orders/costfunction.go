@@ -1,11 +1,15 @@
 import ".../elevio"
+//import "main" //temp only, need to move AccOrders i think
 
-func duplicateOrder(order elevio.Keypress, elevList [elevio.NumElevators]elevio.Elev, id int) bool {
-	return (AcceptedOrdersMatrix[order.Floor][order.Btn]) //returns true if order already exists
-}
+// func duplicateOrder(order elevio.Keypress, elevList [elevio.NumElevators]elevio.Elev, id int) bool {
+// 	return (AcceptedOrdersMatrix[order.Floor][order.Btn]) //returns true if order already exists
+// }
+
+func cost(orders [NumFloors][NumButtons-1]int, FuncElevlist []int)
+
 
 func costCalculator(order elevio.Keypress, elevList [elevio.NumElevators]elevio.Elev, id int, onlineList [elevio.NumElevators]bool) int {
-	if order.Btn == elevio.BtnInside {
+	if order.Btn == elevio.BT_Cab {
 		return id
 	}
 	minCost := (elevio.NumButtons * elevio.NumFloors) * elevio.NumElevators

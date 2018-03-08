@@ -165,7 +165,7 @@ func main() {
 					}
 				}
 
-			//elevio.SetButtonLamp(elevio.ButtonType(a.ButtonPushed[1]), a.ButtonPushed[0], true)
+			elevio.SetButtonLamp(elevio.ButtonType(a.ButtonPushed[1]), a.ButtonPushed[0], true)
 			}
 			fmt.Printf("Received: %#v\n", AckMat[ID-1])
 
