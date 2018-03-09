@@ -75,7 +75,7 @@ func main() {
 	var CurrElev elevio.Elevator
 
 	sentmsg := ElevMsg{id, OM, BP, CurrElev}
-
+	//lololo
 	go func() {
 		for {
 			for i := 0; i < numFloors; i++ {
