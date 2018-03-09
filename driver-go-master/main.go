@@ -9,6 +9,7 @@ import "../Network-go-master/network/bcast"
 import "../Network-go-master/network/peers"
 import "strconv"
 import "./fsm"
+import "./costfunction"
 
 func main() {
 	const (
@@ -66,14 +67,16 @@ func main() {
 	go bcast.Transmitter(25000, msgTrans)
 	go bcast.Receiver(25000, msgRec)
 
+	var elevlist = [numElevators]elevio.Elevator{}
 	var OM = [numFloors][numButtons - 1]int{}
 	var AckMat = [numElevators][numFloors][numButtons - 1]int{}
 	var BP = [2]int{}
 	var AccOrders = [numFloors][numButtons - 1]int{} //Accepted orders, alle heisene ser samme, denne inneholder ikke cab orders.
 	// Cab orders blir lagt direkte inn i ThisElev.Queue. Hver heis har sin egen
-	// queue og sender ikke den til noen (foreløpig). AccOrders må sendes vår (hentes inn av)  kommende kostfunksjon.
+	// queue og sender ikke den til noen (foreløpig). AccOrders må sendes til vår (hentes inn av)  kommende kostfunksjon.
 	var CurrElev elevio.Elevator
-
+	var ID int
+	ID, _ = strconv.Atoi(id)
 	sentmsg := ElevMsg{id, OM, BP, CurrElev}
 	//lololo
 	go func() {
@@ -88,11 +91,14 @@ func main() {
 					}
 					if counter == activeElevs {
 						AccOrders[i][j] = 1
+						costfunction.CostCalc(elevlist, i, j, activeElevs)
+						fmt.Printf("elvlist av 0: %+v\n", elevlist) // elevlist does not keep changes after being run in costfunction (make it work!)
 					}
 				}
 			}
 			fmt.Println(AccOrders)
 			fsm.Elev.AcceptedOrders = AccOrders
+
 			time.Sleep(4 * time.Second)
 		}
 	}()
@@ -111,11 +117,13 @@ func main() {
 				elevio.SetButtonLamp(a.Button, a.Floor, true)
 				fmt.Println("orders in queue: \n", sentmsg.ThisElev.Requests)
 				fsm.OnRequestButtonPress(a.Floor, a.Button)
+				elevlist[ID].Requests[a.Floor][a.Button] = true
 
 			}
 
 		case a := <-drv_floors:
 			fsm.OnFloorArrival(a)
+			fmt.Printf("loop or no?\n")
 
 		case p := <-peerUpdateCh:
 			fmt.Printf("Peer update:\n")
@@ -127,8 +135,6 @@ func main() {
 			//fmt.Println("antall peers: %s\n",antallpeers)
 
 		case a := <-msgRec:
-			var ID int
-			ID, _ = strconv.Atoi(a.ElevatorID)
 			fmt.Printf("ID: %d\n", ID)
 			if AckMat[ID-1][a.ButtonPushed[0]][a.ButtonPushed[1]] != 2 {
 				AckMat[ID-1][a.ButtonPushed[0]][a.ButtonPushed[1]] = a.OrderMatrix[a.ButtonPushed[0]][a.ButtonPushed[1]]
@@ -154,6 +160,15 @@ func main() {
 			elevio.SetButtonLamp(elevio.ButtonType(a.ButtonPushed[1]), a.ButtonPushed[0], true)
 
 			fmt.Printf("Received: %#v\n", AckMat[ID-1])
+
+			for i := 0; i < numFloors; i++ {
+				for j := 0; j < numButtons; j++ {
+					if elevlist[ID].Requests[i][j] {
+						fmt.Printf("rett før anders cumme")
+						fsm.OnRequestButtonPress(i, elevio.ButtonType(j))
+					}
+				}
+			}
 
 		case a := <-drv_obstr:
 			fmt.Printf("%+v\n", a)

@@ -10,8 +10,9 @@ const _pollRate = 20 * time.Millisecond
 var _initialized bool = false
 
 const (
-	NumFloors  = 4
-	NumButtons = 3
+	NumFloors    = 4
+	NumButtons   = 3
+	NumElevators = 3
 )
 
 var _numFloors int = 4

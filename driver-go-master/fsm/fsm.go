@@ -1,7 +1,6 @@
 package fsm
 
 import (
-	"fmt"
 	"time"
 
 	"../elevio"
@@ -51,11 +50,11 @@ func OnInitBetweenFloors() {
 func OnRequestButtonPress(btn_floor int, btn_type elevio.ButtonType) {
 	//fmt.Println(btn_floor, elevio_button_toString(btn_type)) //Mangler to første argumenter
 	//Elev_print(Elev)
-	fmt.Printf("ORBP, inni func")
+
 	switch Elev.State {
 
 	case elevio.DoorOpen:
-		fmt.Printf("DårOpan")
+
 		if Elev.Floor == btn_floor {
 			Door_timer.Reset(3 * time.Second)
 		} else {
@@ -68,7 +67,7 @@ func OnRequestButtonPress(btn_floor int, btn_type elevio.ButtonType) {
 
 	case elevio.Idle:
 		if Elev.Floor == btn_floor {
-			fmt.Printf("Idle")
+
 			elevio.SetDoorOpenLamp(true)
 			Door_timer.Reset(3 * time.Second)
 			Elev.State = elevio.DoorOpen
@@ -86,14 +85,14 @@ func OnRequestButtonPress(btn_floor int, btn_type elevio.ButtonType) {
 }
 
 func OnFloorArrival(newFloor int) {
-	fmt.Println(newFloor) //Er noe rart her også
+	//fmt.Println(newFloor) //Er noe rart her også
 	//Elev_print(Elev)
 	Elev.Floor = newFloor
 	elevio.SetFloorIndicator(Elev.Floor)
 	switch Elev.State {
 	case elevio.Moving:
 		if requests.ShouldStop(Elev) {
-			fmt.Printf("??\n")
+
 			elevio.SetMotorDirection(elevio.MD_Stop)
 			elevio.SetDoorOpenLamp(true)
 			Elev = requests.ClearAtCurrentFloor(Elev)

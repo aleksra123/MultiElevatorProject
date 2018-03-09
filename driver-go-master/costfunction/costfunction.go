@@ -1,4 +1,4 @@
-package cost_fns
+package costfunction
 
 import (
 	"../elevio"
@@ -48,4 +48,21 @@ func timeToIdle(e elevio.Elevator) float64 {
 		e.Floor += int(e.Dir)
 		duration += TRAVEL_TIME
 	}
+}
+
+func CostCalc(elevlist [elevio.NumElevators]elevio.Elevator, floor int, button int, activeElevators int) {
+	var minCost float64 = 500
+	var bestElev elevio.Elevator
+	//var index int
+	for i := 0; i < activeElevators; i++ {
+		time := timeToIdle(elevlist[i])
+		if time < minCost {
+			minCost = time
+			bestElev = elevlist[i]
+			//index = i
+		}
+	}
+	bestElev.Requests[floor][elevio.ButtonType(button)] = true
+	//fmt.Printf("dette er states til beste heis %+v\n dette er index: %d\n", bestElev, index)
+
 }
