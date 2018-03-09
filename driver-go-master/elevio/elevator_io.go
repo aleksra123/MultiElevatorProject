@@ -8,12 +8,14 @@ import "fmt"
 const _pollRate = 20 * time.Millisecond
 
 var _initialized bool = false
-const(
+
+const (
 	NumFloors  = 4
-	NumButtons  = 3
+	NumButtons = 3
 )
- var _numFloors int = 4
- var _numButtons int = 3
+
+var _numFloors int = 4
+var _numButtons int = 3
 var _mtx sync.Mutex
 var _conn net.Conn
 
@@ -45,18 +47,12 @@ type Keypress struct {
 	Done               bool
 }
 
-type Direction int
-const (
-	DirDown Direction = iota - 1
-	DirStop
-	DirUp
-)
-
-type Elev struct {
-	State ElevState
-	Dir   Direction
-	Floor int
-	Queue [NumFloors][NumButtons]int
+type Elevator struct {
+	State          ElevState
+	Dir            MotorDirection
+	Floor          int
+	Requests       [NumFloors][NumButtons]bool
+	AcceptedOrders [NumFloors][NumButtons - 1]int
 }
 
 type ElevState int

@@ -1,8 +1,6 @@
 package main
 
 import "./elevio"
-
-//import "../config"
 import "fmt"
 import "time"
 import "flag"
@@ -10,31 +8,36 @@ import "os"
 import "../Network-go-master/network/bcast"
 import "../Network-go-master/network/peers"
 import "strconv"
+import "./fsm"
 
-//import "../Network-go-master/network/localip"
-//project-proggeskuta/driver-go-master/
 func main() {
 	const (
-		numFloors  = 4
-		numButtons = 3
+		numFloors    = 4
+		numButtons   = 3
 		numElevators = 3
 	)
-
-
 	activeElevs := numElevators //needs to be non-zero initialized, changes when peers are updated (see case p := <- peerUpdateCh)
-
-	port := ":" + os.Args[2]  // this is nescessary to run the test.sh shell. if you want to run normally use the line below
+	port := ":" + os.Args[2]    // this is nescessary to run the test.sh shell. if you want to run normally use the line below
 	//elevio.Init("localhost:(same_port_as_in:_sim.con)", numFloors)
 	elevio.Init(port, numFloors)
-
-	var d elevio.MotorDirection = elevio.MD_Up
-	//elevio.SetMotorDirection(d)
+	fsm.Elev.State = elevio.Undefined
+	var d elevio.MotorDirection = elevio.MD_Stop
 
 	drv_buttons := make(chan elevio.ButtonEvent)
 	drv_floors := make(chan int)
 	drv_obstr := make(chan bool)
 	drv_stop := make(chan bool)
+	drv_timeout := fsm.Door_timer.C
 
+	fsm.Elev.State = elevio.Undefined
+
+	select { //Init
+	case <-drv_floors:
+		elevio.SetMotorDirection(elevio.MD_Stop)
+		fsm.Elev.State = elevio.Idle
+	default:
+		fsm.OnInitBetweenFloors()
+	}
 
 	go elevio.PollButtons(drv_buttons)
 	go elevio.PollFloorSensor(drv_floors)
@@ -45,15 +48,10 @@ func main() {
 		ElevatorID   string
 		OrderMatrix  [numFloors][numButtons - 1]int
 		ButtonPushed [2]int
-		ThisElev		 elevio.Elev
-
-
-		//Iter        int
+		ThisElev     elevio.Elevator
 	}
 
 	var id string
-
-	//id = "5"
 	flag.StringVar(&id, "id", "", "id of this peer")
 	flag.Parse()
 
@@ -71,61 +69,53 @@ func main() {
 	var OM = [numFloors][numButtons - 1]int{}
 	var AckMat = [numElevators][numFloors][numButtons - 1]int{}
 	var BP = [2]int{}
-	var AccOrders = [numFloors][numButtons-1]int{} //Accepted orders, alle heisene ser samme, denne inneholder ikke cab orders.
-																								// Cab orders blir lagt direkte inn i ThisElev.Queue. Hver heis har sin egen
-																								// queue og sender ikke den til noen.
-	var CurrElev elevio.Elev
+	var AccOrders = [numFloors][numButtons - 1]int{} //Accepted orders, alle heisene ser samme, denne inneholder ikke cab orders.
+	// Cab orders blir lagt direkte inn i ThisElev.Queue. Hver heis har sin egen
+	// queue og sender ikke den til noen (foreløpig). AccOrders må sendes vår (hentes inn av)  kommende kostfunksjon.
+	var CurrElev elevio.Elevator
 
 	sentmsg := ElevMsg{id, OM, BP, CurrElev}
-	// go func() {
-	//
-	// 		for {
-	// 			msgTrans <- sentmsg
-	// 			time.Sleep(4 * time.Second)
-	// 		}
-	// }()
-
 
 	go func() {
-
-			for {
-				for i := 0; i < numFloors; i++{
-					for j :=0; j < numButtons-1; j++{
-						var counter int
-						for k := 0; k < activeElevs; k++ {
-								if AckMat[k][i][j] == 2 {
-								counter++
-							}
-						}
-						if counter == activeElevs{
-							AccOrders[i][j] = 1
-							}
+		for {
+			for i := 0; i < numFloors; i++ {
+				for j := 0; j < numButtons-1; j++ {
+					var counter int
+					for k := 0; k < activeElevs; k++ {
+						if AckMat[k][i][j] == 2 {
+							counter++
 						}
 					}
-					fmt.Println(AccOrders)
-					time.Sleep(4 * time.Second)
+					if counter == activeElevs {
+						AccOrders[i][j] = 1
+					}
 				}
-
-
+			}
+			fmt.Println(AccOrders)
+			fsm.Elev.AcceptedOrders = AccOrders
+			time.Sleep(4 * time.Second)
+		}
 	}()
-
-
 
 	for {
 		select {
 		case a := <-drv_buttons:
-			if a.Button != 2{
+			if a.Button != 2 {
 				fmt.Printf("%+v\n", a)
-
 				sentmsg.OrderMatrix[a.Floor][int(a.Button)] = 1
 				sentmsg.ButtonPushed[1] = int(a.Button)
 				sentmsg.ButtonPushed[0] = a.Floor
-
 				msgTrans <- sentmsg
-			} else{
-				sentmsg.ThisElev.Queue[a.Floor][a.Button] = 1
-				fmt.Println("orders in queue: \n", sentmsg.ThisElev.Queue)
-				}
+			} else {
+				sentmsg.ThisElev.Requests[a.Floor][a.Button] = true
+				elevio.SetButtonLamp(a.Button, a.Floor, true)
+				fmt.Println("orders in queue: \n", sentmsg.ThisElev.Requests)
+				fsm.OnRequestButtonPress(a.Floor, a.Button)
+
+			}
+
+		case a := <-drv_floors:
+			fsm.OnFloorArrival(a)
 
 		case p := <-peerUpdateCh:
 			fmt.Printf("Peer update:\n")
@@ -137,36 +127,32 @@ func main() {
 			//fmt.Println("antall peers: %s\n",antallpeers)
 
 		case a := <-msgRec:
-			//fmt.Printf("Received: %#v\n", a)
 			var ID int
-
 			ID, _ = strconv.Atoi(a.ElevatorID)
 			fmt.Printf("ID: %d\n", ID)
 			if AckMat[ID-1][a.ButtonPushed[0]][a.ButtonPushed[1]] != 2 {
 				AckMat[ID-1][a.ButtonPushed[0]][a.ButtonPushed[1]] = a.OrderMatrix[a.ButtonPushed[0]][a.ButtonPushed[1]]
 				//fmt.Printf("Received: %#v\n", AckMat[ID-1])
 				for i := 0; i < activeElevs; i++ {
-					if AckMat[i][a.ButtonPushed[0]][a.ButtonPushed[1]] < AckMat[ID-1][a.ButtonPushed[0]][a.ButtonPushed[1]]{
+					if AckMat[i][a.ButtonPushed[0]][a.ButtonPushed[1]] == AckMat[ID-1][a.ButtonPushed[0]][a.ButtonPushed[1]]-1 {
 						AckMat[i][a.ButtonPushed[0]][a.ButtonPushed[1]]++
 						fmt.Printf("we incremented! \n")
 					}
 				}
-
-
 				var counter int
 				for i := 0; i < activeElevs; i++ {
-						if AckMat[i][a.ButtonPushed[0]][a.ButtonPushed[1]] == 1 {
+					if AckMat[i][a.ButtonPushed[0]][a.ButtonPushed[1]] == 1 {
 						counter++
 					}
 				}
-				if counter == activeElevs{
+				if counter == activeElevs {
 					for i := 0; i < activeElevs; i++ {
 						AckMat[i][a.ButtonPushed[0]][a.ButtonPushed[1]] = 2
 					}
 				}
-
-			elevio.SetButtonLamp(elevio.ButtonType(a.ButtonPushed[1]), a.ButtonPushed[0], true)
 			}
+			elevio.SetButtonLamp(elevio.ButtonType(a.ButtonPushed[1]), a.ButtonPushed[0], true)
+
 			fmt.Printf("Received: %#v\n", AckMat[ID-1])
 
 		case a := <-drv_obstr:
@@ -178,13 +164,14 @@ func main() {
 			}
 
 		case a := <-drv_stop:
-
 			fmt.Printf("%+v\n", a)
 			for f := 0; f < numFloors; f++ {
 				for b := elevio.ButtonType(0); b < 3; b++ {
 					elevio.SetButtonLamp(b, f, false)
 				}
 			}
+		case <-drv_timeout:
+			fsm.OnDoorTimeout()
 		}
 	}
 

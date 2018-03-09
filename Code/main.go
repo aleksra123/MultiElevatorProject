@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"os"
 
 	"./elevio"
 	"./fsm"
@@ -9,8 +10,9 @@ import (
 )
 
 func main() {
-
-	elevio.Init("localhost:15657") //200+arb.plass or 15657
+	port := ":" + os.Args[2]
+	elevio.Init(port)
+	//elevio.Init("localhost:15657") //200+arb.plass or 15657
 	fsm.Elev.State = elevio.Undefined
 
 	drv_buttons := make(chan elevio.ButtonEvent)
