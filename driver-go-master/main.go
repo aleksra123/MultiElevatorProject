@@ -63,30 +63,6 @@ func main() {
 	var pos int
 	var sentmsg = ElevMsg{id, fsm.BP, fsm.CurrElev}
 
-	// go func() {
-	// 	for {
-	// 		for i := 0; i < elevio.NumFloors; i++ {
-	// 			for j := 0; j < elevio.NumButtons-1; j++ {
-	// 				var counter int
-	// 				for k := 0; k < activeElevs; k++ {
-	// 					if fsm.AckMat[k][i][j] == 2 {
-	// 						counter++
-	// 					}
-	// 				}
-	// 				if counter == activeElevs {
-	//
-	// 					fsm.Elev.AcceptedOrders[i][j] = 1
-	//
-	// 					var index int = costfunction.CostCalc(fsm.Elevlist, i, j, activeElevs)
-	// 					fsm.Elevlist[index].Requests[i][j] = true
-	//
-	// 					//fmt.Printf("Elevlist av 0: %+v\n", fsm.Elevlist[index].Requests) // Elevlist does not keep changes after being run in costfunction (make it work!)
-	// 				}
-	// 			}
-	// 		}
-	// 	}
-	// }()
-
 	for {
 		select {
 		case a := <-drv_buttons:
@@ -102,7 +78,6 @@ func main() {
 				//fmt.Println("orders in queue: \n", sentmsg.ThisElev.Requests)
 				fsm.OnRequestButtonPress(a.Floor, a.Button)
 				fsm.Elevlist[pos].Requests[a.Floor][a.Button] = true
-
 			}
 
 		case a := <-drv_floors:
@@ -116,6 +91,7 @@ func main() {
 			for _, i := range p.Peers {
 				if i == id {
 					pos = teller
+					fsm.Elevlist[pos].Position = pos
 				}
 				teller++
 			}

@@ -52,6 +52,7 @@ type Elevator struct {
 	Floor          int
 	Requests       [NumFloors][NumButtons]bool
 	AcceptedOrders [NumFloors][NumButtons - 1]int
+	Position       int
 }
 
 type ElevState int

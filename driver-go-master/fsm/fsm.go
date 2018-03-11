@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"time"
 
-	"../costfunction"
 	"../elevio"
 	"../requests"
 )
@@ -49,10 +48,13 @@ func RecievedMSG(floor int, button int, e elevio.Elevator, position int, activeE
 				for i := 0; i < activeE; i++ {
 					AckMat[i][floor][button] = 2
 				}
-				var index int = costfunction.CostCalc(Elevlist, floor, button, activeE)
-				Elevlist[index].AcceptedOrders[floor][button] = 1
-				Elevlist[index].Requests[floor][button] = true
-				SetAllLights(Elevlist[index])
+				//var index int = costfunction.CostCalc(Elevlist, floor, button, activeE)
+				Elev.AcceptedOrders[floor][button] = 1
+				Elev.Requests[floor][button] = true // må bruke elevlist[] ved flere heiser ??'
+				for i := 0; i < activeE; i++ {
+					AckMat[i][floor][button] = 0
+				}
+				SetAllLights(Elev)
 			}
 		}
 
@@ -60,7 +62,7 @@ func RecievedMSG(floor int, button int, e elevio.Elevator, position int, activeE
 
 		for i := 0; i < elevio.NumFloors; i++ {
 			for j := 0; j < elevio.NumButtons; j++ {
-				if Elevlist[position].Requests[i][j] {
+				if Elev.Requests[i][j] { // må bruke elevlist[] ved flere heiser ??
 					OnRequestButtonPress(i, elevio.ButtonType(j))
 				}
 			}
@@ -71,16 +73,16 @@ func RecievedMSG(floor int, button int, e elevio.Elevator, position int, activeE
 func SetAllLights(es elevio.Elevator) {
 	var btn elevio.ButtonType = elevio.BT_Cab
 	for floor := 0; floor < NumFloors; floor++ {
-		if es.Requests[floor][btn] == true {
+		if Elev.Requests[floor][btn] == true {
 			fmt.Printf("cab\n")
 			elevio.SetButtonLamp(btn, floor, true)
 		} else {
 			elevio.SetButtonLamp(btn, floor, false)
 		}
 	}
-	for floor := 0; floor < NumFloors-1; floor++ {
+	for floor := 0; floor < NumFloors; floor++ {
 		for bttn := 0; bttn < NumButtons-1; bttn++ {
-			if es.AcceptedOrders[floor][bttn] == 1 {
+			if Elev.AcceptedOrders[floor][bttn] == 1 {
 				elevio.SetButtonLamp(elevio.ButtonType(bttn), floor, true)
 			} else {
 				elevio.SetButtonLamp(elevio.ButtonType(bttn), floor, false)
