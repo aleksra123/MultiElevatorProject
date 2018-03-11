@@ -44,6 +44,7 @@ func main() {
 		ElevatorID   string
 		ButtonPushed [2]int
 		ThisElev     [elevio.NumElevators]elevio.Elevator
+		ListPos      int
 	}
 
 	var id string
@@ -61,7 +62,7 @@ func main() {
 	go bcast.Receiver(25000, msgRec)
 
 	var pos int
-	var sentmsg = ElevMsg{id, fsm.BP, fsm.CurrElev}
+	var sentmsg = ElevMsg{id, fsm.BP, fsm.CurrElev, pos}
 
 	// go func() {
 	// 	for {
@@ -69,6 +70,7 @@ func main() {
 	// 		time.Sleep(250 * time.Millisecond)
 	// 	}
 	// }()
+	//sender melding ved knappetrykk atm, lettere debug
 
 	for {
 		select {
@@ -90,7 +92,7 @@ func main() {
 
 		case a := <-drv_floors:
 			fsm.OnFloorArrival(a, pos, activeElevs)
-			msgTrans <- sentmsg
+			//msgTrans <- sentmsg
 			//fmt.Printf("loop or no?\n")
 
 		case p := <-peerUpdateCh:
@@ -100,7 +102,8 @@ func main() {
 			for _, i := range p.Peers {
 				if i == id {
 					pos = teller
-					sentmsg.ThisElev[pos].Position = pos
+					sentmsg.ListPos = pos
+					//sentmsg.ThisElev[pos].Position = pos
 					fmt.Printf("pos: %d\n", pos)
 
 				}
@@ -109,7 +112,7 @@ func main() {
 			teller = 0
 
 		case a := <-msgRec:
-			fsm.RecievedMSG(a.ButtonPushed[0], a.ButtonPushed[1], a.ThisElev[pos], pos, activeElevs)
+			fsm.RecievedMSG(a.ButtonPushed[0], a.ButtonPushed[1], a.ListPos, activeElevs)
 			sentmsg.ButtonPushed[0] = -10 // same as init value so we dont keep sending the same buttonpress forever
 
 		case a := <-drv_obstr:

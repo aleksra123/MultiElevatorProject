@@ -26,8 +26,9 @@ var CurrElev = [elevio.NumElevators]elevio.Elevator{}
 var firstTime bool = false
 var teller int
 
-func RecievedMSG(floor int, button int, e elevio.Elevator, position int, activeE int) {
+func RecievedMSG(floor int, button int, position int, activeE int) {
 	var index int
+	fmt.Printf("posisjon. %d\n", position)
 	if floor != -10 {
 		if AckMat[position][floor][button] != 2 {
 			AckMat[position][floor][button] = 1
@@ -48,14 +49,14 @@ func RecievedMSG(floor int, button int, e elevio.Elevator, position int, activeE
 				for i := 0; i < activeE; i++ {
 					AckMat[i][floor][button] = 2
 					CurrElev[i].AcceptedOrders[floor][button] = 1
-					fmt.Printf("Accepted av i : %d\n", CurrElev[i].AcceptedOrders)
+					//fmt.Printf("Accepted av i : %d\n", CurrElev[i].AcceptedOrders)
 				}
 				index = costfunction.CostCalc(CurrElev, floor, button, activeE)
 				fmt.Printf("index: %d\n", index)
 
 				CurrElev[index].Requests[floor][button] = true
 				for i := 0; i < activeE; i++ {
-					fmt.Printf("Accepted av i : %+v\n", CurrElev[i].Requests)
+					//fmt.Printf("Accepted av i : %+v\n", CurrElev[i].Requests)
 					AckMat[i][floor][button] = 0
 
 				}
@@ -176,7 +177,7 @@ func OnFloorArrival(newFloor int, pos int, activeE int) {
 			CurrElev[pos] = requests.ClearAtCurrentFloor(CurrElev[pos])
 			for i := 0; i < activeE; i++ {
 
-				fmt.Printf("Cleared av i: %+v\n", CurrElev[i].AcceptedOrders)
+				//fmt.Printf("Cleared av i: %+v\n", CurrElev[i].AcceptedOrders)
 				SetAllLights(CurrElev[i])
 			}
 			fmt.Println("slutt\n")
