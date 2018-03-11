@@ -67,7 +67,7 @@ func main() {
 		select {
 		case a := <-drv_buttons:
 			if a.Button != 2 {
-				fmt.Printf("%+v\n", a)
+				//fmt.Printf("%+v\n", a)
 				//sentmsg.OrderMatrix[a.Floor][int(a.Button)] = 1
 				sentmsg.ButtonPushed[1] = int(a.Button)
 				sentmsg.ButtonPushed[0] = a.Floor
@@ -92,6 +92,7 @@ func main() {
 				if i == id {
 					pos = teller
 					fsm.Elevlist[pos].Position = pos
+					fmt.Printf("poosss: %d\n", pos)
 				}
 				teller++
 			}
