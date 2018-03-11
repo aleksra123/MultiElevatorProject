@@ -15,8 +15,6 @@ const (
 	NumElevators = 3
 )
 
-var _numFloors int = 4
-var _numButtons int = 3
 var _mtx sync.Mutex
 var _conn net.Conn
 
@@ -70,7 +68,7 @@ func Init(addr string, numFloors int) {
 		fmt.Println("Driver already initialized!")
 		return
 	}
-	_numFloors = numFloors
+	//_numFloors = numFloors
 	_mtx = sync.Mutex{}
 	var err error
 	_conn, err = net.Dial("tcp", addr)
@@ -111,10 +109,10 @@ func SetStopLamp(value bool) {
 }
 
 func PollButtons(receiver chan<- ButtonEvent) {
-	prev := make([][3]bool, _numFloors)
+	prev := make([][3]bool, NumFloors)
 	for {
 		time.Sleep(_pollRate)
-		for f := 0; f < _numFloors; f++ {
+		for f := 0; f < NumFloors; f++ {
 			for b := ButtonType(0); b < 3; b++ {
 				v := getButton(b, f)
 				if v != prev[f][b] && v != false {

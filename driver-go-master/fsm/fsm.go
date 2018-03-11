@@ -1,8 +1,10 @@
 package fsm
 
 import (
+	"fmt"
 	"time"
 
+	"../costfunction"
 	"../elevio"
 	"../requests"
 )
@@ -21,10 +23,56 @@ var Elev elevio.Elevator
 
 var Door_timer = time.NewTimer(3 * time.Second)
 
-func setAllLights(es elevio.Elevator) {
+var AckMat = [elevio.NumElevators][elevio.NumFloors][elevio.NumButtons - 1]int{}
+var Elevlist = [elevio.NumElevators]elevio.Elevator{}
+var BP = [2]int{-10, 0}
+var CurrElev elevio.Elevator
+
+func RecievedMSG(floor int, button int, e elevio.Elevator, position int, activeE int) {
+	if floor != -10 {
+		if AckMat[position][floor][button] != 2 {
+			AckMat[position][floor][button] = 1
+			//fmt.Printf("Received: %#v\n", AckMat[ID-1])
+			for i := 0; i < activeE; i++ {
+				if AckMat[i][floor][button] == AckMat[position][floor][button]-1 {
+					AckMat[i][floor][button]++
+					//fmt.Printf("we incremented! \n")
+				}
+			}
+			var counter int
+			for i := 0; i < activeE; i++ {
+				if AckMat[i][floor][button] == 1 {
+					counter++
+				}
+			}
+			if counter == activeE {
+				for i := 0; i < activeE; i++ {
+					AckMat[i][floor][button] = 2
+				}
+				var index int = costfunction.CostCalc(Elevlist, floor, button, activeE)
+				Elevlist[index].AcceptedOrders[floor][button] = 1
+				Elevlist[index].Requests[floor][button] = true
+				SetAllLights(Elevlist[index])
+			}
+		}
+
+		fmt.Printf("Received: %#v\n", AckMat[position])
+
+		for i := 0; i < elevio.NumFloors; i++ {
+			for j := 0; j < elevio.NumButtons; j++ {
+				if Elevlist[position].Requests[i][j] {
+					OnRequestButtonPress(i, elevio.ButtonType(j))
+				}
+			}
+		}
+	}
+}
+
+func SetAllLights(es elevio.Elevator) {
 	var btn elevio.ButtonType = elevio.BT_Cab
 	for floor := 0; floor < NumFloors; floor++ {
-		if Elev.Requests[floor][btn] == true {
+		if es.Requests[floor][btn] == true {
+			fmt.Printf("cab\n")
 			elevio.SetButtonLamp(btn, floor, true)
 		} else {
 			elevio.SetButtonLamp(btn, floor, false)
@@ -32,7 +80,7 @@ func setAllLights(es elevio.Elevator) {
 	}
 	for floor := 0; floor < NumFloors-1; floor++ {
 		for bttn := 0; bttn < NumButtons-1; bttn++ {
-			if Elev.AcceptedOrders[floor][bttn] == 1 {
+			if es.AcceptedOrders[floor][bttn] == 1 {
 				elevio.SetButtonLamp(elevio.ButtonType(bttn), floor, true)
 			} else {
 				elevio.SetButtonLamp(elevio.ButtonType(bttn), floor, false)
@@ -96,8 +144,9 @@ func OnFloorArrival(newFloor int) {
 			elevio.SetMotorDirection(elevio.MD_Stop)
 			elevio.SetDoorOpenLamp(true)
 			Elev = requests.ClearAtCurrentFloor(Elev)
+
 			Door_timer.Reset(3 * time.Second)
-			setAllLights(Elev)
+			SetAllLights(Elev)
 			Elev.State = elevio.DoorOpen
 		}
 	}

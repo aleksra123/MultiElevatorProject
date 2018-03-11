@@ -76,6 +76,7 @@ func ClearAtCurrentFloor(e Elevator) Elevator {
 	} //Clears both directions
 	for btn := 0; btn < NumButtons-1; btn++ {
 		e.AcceptedOrders[e.Floor][btn] = 0
+
 	} //Clears both directions
 	return e //Why does it return an elevator-type?
 }

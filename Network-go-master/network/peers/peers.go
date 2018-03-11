@@ -1,11 +1,12 @@
 package peers
 
 import (
-	"../conn"
 	"fmt"
 	"net"
 	"sort"
 	"time"
+
+	"../conn"
 )
 
 type PeerUpdate struct {
@@ -16,6 +17,14 @@ type PeerUpdate struct {
 
 const interval = 15 * time.Millisecond
 const timeout = 50 * time.Millisecond
+
+func UpdatePeers(p PeerUpdate) {
+	fmt.Printf("Peer update:\n")
+	fmt.Printf("  Peers:    %q\n", p.Peers)
+	fmt.Printf("  New:      %q\n", p.New)
+	fmt.Printf("  Lost:     %q\n", p.Lost)
+	fmt.Printf(" Length of Peers:    %d\n", len(p.Peers))
+}
 
 func Transmitter(port int, id string, transmitEnable <-chan bool) {
 

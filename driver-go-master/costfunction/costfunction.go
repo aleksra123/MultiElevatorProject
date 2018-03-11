@@ -50,19 +50,20 @@ func timeToIdle(e elevio.Elevator) float64 {
 	}
 }
 
-func CostCalc(elevlist [elevio.NumElevators]elevio.Elevator, floor int, button int, activeElevators int) {
+func CostCalc(elevlist [elevio.NumElevators]elevio.Elevator, floor int, button int, activeElevators int) int {
 	var minCost float64 = 500
-	var bestElev elevio.Elevator
-	//var index int
+	//var bestElev elevio.Elevator
+	var index int
 	for i := 0; i < activeElevators; i++ {
 		time := timeToIdle(elevlist[i])
 		if time < minCost {
 			minCost = time
-			bestElev = elevlist[i]
-			//index = i
+			//bestElev = elevlist[i]
+			index = i
 		}
 	}
-	bestElev.Requests[floor][elevio.ButtonType(button)] = true
+	return index
+	//bestElev.Requests[floor][elevio.ButtonType(button)] = true
 	//fmt.Printf("dette er states til beste heis %+v\n dette er index: %d\n", bestElev, index)
 
 }
