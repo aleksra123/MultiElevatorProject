@@ -43,7 +43,7 @@ func main() {
 	type ElevMsg struct {
 		ElevatorID   string
 		ButtonPushed [2]int
-		ThisElev     elevio.Elevator
+		ThisElev     [elevio.NumElevators]elevio.Elevator
 	}
 
 	var id string
@@ -63,9 +63,17 @@ func main() {
 	var pos int
 	var sentmsg = ElevMsg{id, fsm.BP, fsm.CurrElev}
 
+	// go func() {
+	// 	for {
+	// 		msgTrans <- sentmsg
+	// 		time.Sleep(250 * time.Millisecond)
+	// 	}
+	// }()
+
 	for {
 		select {
 		case a := <-drv_buttons:
+
 			if a.Button != 2 {
 				//fmt.Printf("%+v\n", a)
 				//sentmsg.OrderMatrix[a.Floor][int(a.Button)] = 1
@@ -73,15 +81,16 @@ func main() {
 				sentmsg.ButtonPushed[0] = a.Floor
 				msgTrans <- sentmsg
 			} else {
-				sentmsg.ThisElev.Requests[a.Floor][a.Button] = true
+				sentmsg.ThisElev[pos].Requests[a.Floor][a.Button] = true
 				elevio.SetButtonLamp(a.Button, a.Floor, true)
 				//fmt.Println("orders in queue: \n", sentmsg.ThisElev.Requests)
 				fsm.OnRequestButtonPress(a.Floor, a.Button, pos)
-				fsm.Elevlist[pos].Requests[a.Floor][a.Button] = true
+				sentmsg.ThisElev[pos].Requests[a.Floor][a.Button] = true
 			}
 
 		case a := <-drv_floors:
-			fsm.OnFloorArrival(a, pos)
+			fsm.OnFloorArrival(a, pos, activeElevs)
+			msgTrans <- sentmsg
 			//fmt.Printf("loop or no?\n")
 
 		case p := <-peerUpdateCh:
@@ -91,19 +100,17 @@ func main() {
 			for _, i := range p.Peers {
 				if i == id {
 					pos = teller
-					fsm.Elevlist[pos].Position = pos
-					fmt.Printf("poosss: %d\n", pos)
-					fmt.Println(fsm.Elevlist[pos].Position)
-					// fsm.CurrElev.Position = pos
-					// fmt.Printf("poosss: %d\n", pos)
-					// fmt.Println(fsm.CurrElev.Position)
+					sentmsg.ThisElev[pos].Position = pos
+					fmt.Printf("pos: %d\n", pos)
+
 				}
 				teller++
 			}
 			teller = 0
 
 		case a := <-msgRec:
-			fsm.RecievedMSG(a.ButtonPushed[0], a.ButtonPushed[1], a.ThisElev, pos, activeElevs)
+			fsm.RecievedMSG(a.ButtonPushed[0], a.ButtonPushed[1], a.ThisElev[pos], pos, activeElevs)
+			sentmsg.ButtonPushed[0] = -10 // same as init value so we dont keep sending the same buttonpress forever
 
 		case a := <-drv_obstr:
 			fmt.Printf("%+v\n", a)
