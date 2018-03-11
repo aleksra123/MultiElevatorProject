@@ -28,6 +28,8 @@ var Elevlist = [elevio.NumElevators]elevio.Elevator{}
 var BP = [2]int{-10, 0}
 var CurrElev elevio.Elevator
 
+var firstTime bool = false
+
 func RecievedMSG(floor int, button int, e elevio.Elevator, position int, activeE int) {
 	if floor != -10 {
 		if AckMat[position][floor][button] != 2 {
@@ -66,7 +68,7 @@ func RecievedMSG(floor int, button int, e elevio.Elevator, position int, activeE
 			for j := 0; j < elevio.NumButtons; j++ {
 				if Elevlist[position].Requests[i][j] { // må bruke elevlist[] ved flere heiser ??
 
-					OnRequestButtonPress(i, elevio.ButtonType(j))
+					OnRequestButtonPress(i, elevio.ButtonType(j), position)
 				}
 			}
 		}
@@ -96,40 +98,41 @@ func SetAllLights(es elevio.Elevator) {
 
 func OnInitBetweenFloors() {
 	elevio.SetMotorDirection(elevio.MD_Down)
-	Elevlist[CurrElev.Position].Dir = elevio.MD_Down
-	Elevlist[CurrElev.Position].State = elevio.Moving
+	Elev.Dir = elevio.MD_Down
+	Elev.State = elevio.Moving
+	firstTime = true
 }
 
-func OnRequestButtonPress(btn_floor int, btn_type elevio.ButtonType) {
+func OnRequestButtonPress(btn_floor int, btn_type elevio.ButtonType, pos int) {
 	//fmt.Println(btn_floor, elevio_button_toString(btn_type)) //Mangler to første argumenter
 	//Elev_print(Elev)
 
-	switch Elevlist[CurrElev.Position].State {
+	switch Elevlist[pos].State {
 
 	case elevio.DoorOpen:
 
-		if Elevlist[CurrElev.Position].Floor == btn_floor {
+		if Elevlist[pos].Floor == btn_floor {
 			Door_timer.Reset(3 * time.Second)
 		} else {
-			Elevlist[CurrElev.Position].Requests[btn_floor][btn_type] = true
+			Elevlist[pos].Requests[btn_floor][btn_type] = true
 
 		}
 
 	case elevio.Moving:
-		Elevlist[CurrElev.Position].Requests[btn_floor][btn_type] = true
+		Elevlist[pos].Requests[btn_floor][btn_type] = true
 
 	case elevio.Idle:
-		if Elevlist[CurrElev.Position].Floor == btn_floor {
+		if Elevlist[pos].Floor == btn_floor {
 
 			elevio.SetDoorOpenLamp(true)
 			Door_timer.Reset(3 * time.Second)
-			Elevlist[CurrElev.Position].State = elevio.DoorOpen
+			Elevlist[pos].State = elevio.DoorOpen
 		} else {
 
-			Elevlist[CurrElev.Position].Requests[btn_floor][btn_type] = true
-			Elevlist[CurrElev.Position].Dir = requests.ChooseDirection(Elevlist[CurrElev.Position])
-			elevio.SetMotorDirection(Elevlist[CurrElev.Position].Dir)
-			Elevlist[CurrElev.Position].State = elevio.Moving
+			Elevlist[pos].Requests[btn_floor][btn_type] = true
+			Elevlist[pos].Dir = requests.ChooseDirection(Elevlist[pos])
+			elevio.SetMotorDirection(Elevlist[pos].Dir)
+			Elevlist[pos].State = elevio.Moving
 		}
 
 	}
@@ -138,42 +141,47 @@ func OnRequestButtonPress(btn_floor int, btn_type elevio.ButtonType) {
 	//Elev_print(Elev)
 }
 
-func OnFloorArrival(newFloor int) {
+func OnFloorArrival(newFloor int, pos int) {
 	//fmt.Println(newFloor) //Er noe rart her også
 	//Elev_print(Elev)
+	if firstTime {
+		Elev.State = elevio.Idle
+		elevio.SetMotorDirection(elevio.MD_Stop)
+		firstTime = false
+	}
 	fmt.Printf("\nOFA\n")
-	Elevlist[CurrElev.Position].Floor = newFloor
-	elevio.SetFloorIndicator(Elevlist[CurrElev.Position].Floor)
-	fmt.Printf("state:   %d\n", Elevlist[CurrElev.Position].State)
-	switch Elevlist[CurrElev.Position].State {
+	Elevlist[pos].Floor = newFloor
+	elevio.SetFloorIndicator(Elevlist[pos].Floor)
+	fmt.Printf("state:   %d\n", Elevlist[pos].State)
+	switch Elevlist[pos].State {
 	case elevio.Moving:
 		fmt.Printf("OFA, case moving\n")
-		if requests.ShouldStop(Elevlist[CurrElev.Position]) {
+		if requests.ShouldStop(Elevlist[pos]) {
 			fmt.Printf("OFA, case moving, if should stop\n")
 			elevio.SetMotorDirection(elevio.MD_Stop)
 			elevio.SetDoorOpenLamp(true)
-			Elevlist[CurrElev.Position] = requests.ClearAtCurrentFloor(Elevlist[CurrElev.Position])
-			fmt.Printf("Position: %d\n", CurrElev.Position)
+			Elevlist[pos] = requests.ClearAtCurrentFloor(Elevlist[pos])
+			fmt.Printf("Position: %d\n", pos)
 
 			Door_timer.Reset(3 * time.Second)
-			SetAllLights(Elevlist[CurrElev.Position])
-			Elevlist[CurrElev.Position].State = elevio.DoorOpen
+			SetAllLights(Elevlist[pos])
+			Elevlist[pos].State = elevio.DoorOpen
 		}
 	}
 	//fmt.Println("\nNew state:\n")
 	//Elev_print(Elev)
 }
 
-func OnDoorTimeout() {
-	switch Elevlist[CurrElev.Position].State {
+func OnDoorTimeout(pos int) {
+	switch Elevlist[pos].State {
 	case elevio.DoorOpen:
-		Elevlist[CurrElev.Position].Dir = requests.ChooseDirection(Elevlist[CurrElev.Position])
+		Elevlist[pos].Dir = requests.ChooseDirection(Elevlist[pos])
 		elevio.SetDoorOpenLamp(false)
-		elevio.SetMotorDirection(Elevlist[CurrElev.Position].Dir)
-		if Elevlist[CurrElev.Position].Dir == elevio.MD_Stop {
-			Elevlist[CurrElev.Position].State = elevio.Idle
+		elevio.SetMotorDirection(Elevlist[pos].Dir)
+		if Elevlist[pos].Dir == elevio.MD_Stop {
+			Elevlist[pos].State = elevio.Idle
 		} else {
-			Elevlist[CurrElev.Position].State = elevio.Moving
+			Elevlist[pos].State = elevio.Moving
 		}
 	}
 }

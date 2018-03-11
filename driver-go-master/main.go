@@ -76,12 +76,12 @@ func main() {
 				sentmsg.ThisElev.Requests[a.Floor][a.Button] = true
 				elevio.SetButtonLamp(a.Button, a.Floor, true)
 				//fmt.Println("orders in queue: \n", sentmsg.ThisElev.Requests)
-				fsm.OnRequestButtonPress(a.Floor, a.Button)
+				fsm.OnRequestButtonPress(a.Floor, a.Button, pos)
 				fsm.Elevlist[pos].Requests[a.Floor][a.Button] = true
 			}
 
 		case a := <-drv_floors:
-			fsm.OnFloorArrival(a)
+			fsm.OnFloorArrival(a, pos)
 			//fmt.Printf("loop or no?\n")
 
 		case p := <-peerUpdateCh:
@@ -93,6 +93,10 @@ func main() {
 					pos = teller
 					fsm.Elevlist[pos].Position = pos
 					fmt.Printf("poosss: %d\n", pos)
+					fmt.Println(fsm.Elevlist[pos].Position)
+					// fsm.CurrElev.Position = pos
+					// fmt.Printf("poosss: %d\n", pos)
+					// fmt.Println(fsm.CurrElev.Position)
 				}
 				teller++
 			}
@@ -117,7 +121,7 @@ func main() {
 				}
 			}
 		case <-drv_timeout:
-			fsm.OnDoorTimeout()
+			fsm.OnDoorTimeout(pos)
 		}
 	}
 
