@@ -13,6 +13,9 @@ import (
 
 func main() {
 
+	// Lettest å kjøre test.sh for å komme i gang, men gjerne koble ut den ene heisen ettersom koden
+	// foreløpig bare funker med en. hehe
+
 	activeElevs := 1         // HAS to be non-zero initialized. Is however promptly updated to correct value bc of peerupdate
 	port := ":" + os.Args[2] // this is nescessary to run the test.sh shell. if you want to run normally use the line below
 	//elevio.Init("localhost:(same_port_as_in:_sim.con)", elevio.NumFloors)
@@ -43,8 +46,8 @@ func main() {
 	type ElevMsg struct {
 		ElevatorID   string
 		ButtonPushed [2]int
-		ThisElev     [elevio.NumElevators]elevio.Elevator
-		ListPos      int
+		ElevList     [elevio.NumElevators]elevio.Elevator //liste med alle heisene
+		ListPos      int //posisjonen i ElevList, oppdateres i peerupdate.
 	}
 
 	var id string
@@ -61,7 +64,7 @@ func main() {
 	go bcast.Transmitter(25000, msgTrans)
 	go bcast.Receiver(25000, msgRec)
 
-	var pos int
+	var pos int // blir oppdatert (nesten) med en gang heisen kommer online
 	var sentmsg = ElevMsg{id, fsm.BP, fsm.CurrElev, pos}
 
 	// go func() {
@@ -76,24 +79,24 @@ func main() {
 		select {
 		case a := <-drv_buttons:
 
-			if a.Button != 2 {
+			if a.Button != 2 { //hvis det ikke er cab, så sender vi det
 				//fmt.Printf("%+v\n", a)
-				//sentmsg.OrderMatrix[a.Floor][int(a.Button)] = 1
-				sentmsg.ButtonPushed[1] = int(a.Button)
+
 				sentmsg.ButtonPushed[0] = a.Floor
+				sentmsg.ButtonPushed[1] = int(a.Button)
 				msgTrans <- sentmsg
-			} else {
-				sentmsg.ThisElev[pos].Requests[a.Floor][a.Button] = true
+			} else { // cab trykk, oppdaterer Requests med en gang og setter lys
+				sentmsg.ElevList[pos].Requests[a.Floor][a.Button] = true
 				elevio.SetButtonLamp(a.Button, a.Floor, true)
-				//fmt.Println("orders in queue: \n", sentmsg.ThisElev.Requests)
-				fsm.OnRequestButtonPress(a.Floor, a.Button, pos)
-				sentmsg.ThisElev[pos].Requests[a.Floor][a.Button] = true
+				//fmt.Println("orders in queue: \n", sentmsg.ElevList.Requests)
+				fsm.OnRequestButtonPress(a.Floor, a.Button, pos) //får den til å kjøre
+
 			}
 
-		case a := <-drv_floors:
+		case a := <-drv_floors: // til info så kjøres denne bare en gang når man kommer til en etasje, ikke loop
 			fsm.OnFloorArrival(a, pos, activeElevs)
 			//msgTrans <- sentmsg
-			//fmt.Printf("loop or no?\n")
+
 
 		case p := <-peerUpdateCh:
 			peers.UpdatePeers(p)
@@ -103,9 +106,8 @@ func main() {
 				if i == id {
 					pos = teller
 					sentmsg.ListPos = pos
-					//sentmsg.ThisElev[pos].Position = pos
+					sentmsg.ElevList[pos].Position = pos //vett egentlig ikkje om elvator structen trenge Position men
 					fmt.Printf("pos: %d\n", pos)
-
 				}
 				teller++
 			}
@@ -114,6 +116,7 @@ func main() {
 		case a := <-msgRec:
 			fsm.RecievedMSG(a.ButtonPushed[0], a.ButtonPushed[1], a.ListPos, activeElevs)
 			sentmsg.ButtonPushed[0] = -10 // same as init value so we dont keep sending the same buttonpress forever
+																		// trengs egentlig bare når vi sender melidnger på heartbeat, ikke knappetrykk
 
 		case a := <-drv_obstr:
 			fmt.Printf("%+v\n", a)
