@@ -24,6 +24,7 @@ func main() {
 	fsm.Elev.State = elevio.Undefined
 	//var d elevio.MotorDirection = elevio.MD_Stop
 
+	//Event channels
 	drv_buttons := make(chan elevio.ButtonEvent)
 	drv_floors := make(chan int)
 	drv_obstr := make(chan bool)
@@ -47,7 +48,7 @@ func main() {
 		ElevatorID   string
 		ButtonPushed [2]int
 		ElevList     [elevio.NumElevators]elevio.Elevator //liste med alle heisene
-		ListPos      int //posisjonen i ElevList, oppdateres i peerupdate.
+		ListPos      int                                  //posisjonen i ElevList, oppdateres i peerupdate.
 	}
 
 	var id string
@@ -97,7 +98,6 @@ func main() {
 			fsm.OnFloorArrival(a, pos, activeElevs)
 			//msgTrans <- sentmsg
 
-
 		case p := <-peerUpdateCh:
 			peers.UpdatePeers(p)
 			activeElevs = len(p.Peers)
@@ -116,7 +116,7 @@ func main() {
 		case a := <-msgRec:
 			fsm.RecievedMSG(a.ButtonPushed[0], a.ButtonPushed[1], a.ListPos, activeElevs)
 			sentmsg.ButtonPushed[0] = -10 // same as init value so we dont keep sending the same buttonpress forever
-																		// trengs egentlig bare når vi sender melidnger på heartbeat, ikke knappetrykk
+			// trengs egentlig bare når vi sender melidnger på heartbeat, ikke knappetrykk
 
 		case a := <-drv_obstr:
 			fmt.Printf("%+v\n", a)

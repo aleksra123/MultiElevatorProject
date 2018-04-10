@@ -9,11 +9,7 @@ import (
 	"../requests"
 )
 
-
-
 var Elev elevio.Elevator
-
-
 
 var Door_timer = time.NewTimer(3 * time.Second)
 
@@ -23,11 +19,10 @@ var CurrElev = [elevio.NumElevators]elevio.Elevator{} //liste med elevs som main
 
 var firstTime bool = false //trengte dette + litt i OnFloorArrival for å intialisere når vi har flere heiser
 
-
 func RecievedMSG(floor int, button int, position int, activeE int) {
 	var index int
 	fmt.Printf("posisjon. %d\n", position) // posisjon i lista, bør være 0 hvis du bare har en heis
-	if floor != -10 { // se main:118
+	if floor != -10 {                      // se main:118
 		if AckMat[position][floor][button] != 2 {
 			AckMat[position][floor][button] = 1
 			//fmt.Printf("Received: %#v\n", AckMat[ID-1])
@@ -47,11 +42,11 @@ func RecievedMSG(floor int, button int, position int, activeE int) {
 				for i := 0; i < activeE; i++ {
 					AckMat[i][floor][button] = 2
 					CurrElev[i].AcceptedOrders[floor][button] = 1 // Er egentlig veldig skeptisk til denne måten å akseptere
-																												// ordre på, siden vi bare sender en gang og så går alt på
-																												// logiske operasjoner.
-																												//har en mistanke om at hver heis som kjører lager sin egen
-																												// CurrElev liste hvor elementene ikke nødvendigvis er like
-																												//de andre heisene sin CurrElev liste...men vet ikke
+					// ordre på, siden vi bare sender en gang og så går alt på
+					// logiske operasjoner.
+					//har en mistanke om at hver heis som kjører lager sin egen
+					// CurrElev liste hvor elementene ikke nødvendigvis er like
+					//de andre heisene sin CurrElev liste...men vet ikke
 					//fmt.Printf("Accepted av i : %d\n", CurrElev[i].AcceptedOrders)
 				}
 				index = costfunction.CostCalc(CurrElev, floor, button, activeE)
@@ -141,7 +136,7 @@ func OnRequestButtonPress(btn_floor int, btn_type elevio.ButtonType, pos int) {
 
 			CurrElev[pos].Requests[btn_floor][btn_type] = true
 			CurrElev[pos].Dir = requests.ChooseDirection(CurrElev[pos]) //tror denne får inn noe feil ved flere hesier
-																																	//ettersom en av heisene nesten alltid kjører opp
+			//ettersom en av heisene nesten alltid kjører opp
 			elevio.SetMotorDirection(CurrElev[pos].Dir)
 			CurrElev[pos].State = elevio.Moving
 		}
@@ -156,6 +151,12 @@ func OnFloorArrival(newFloor int, pos int, activeE int) {
 		Elev.State = elevio.Idle
 		elevio.SetMotorDirection(elevio.MD_Stop)
 		firstTime = false
+	}
+
+	if Elev.Dir == elevio.MD_Up && newFloor == 3 {
+		elevio.SetMotorDirection(elevio.MD_Stop)
+	} else if Elev.Dir == elevio.MD_Down && newFloor == 0 {
+		elevio.SetMotorDirection(elevio.MD_Stop)
 	}
 	//fmt.Printf("\nOFA\n")
 	CurrElev[pos].Floor = newFloor
@@ -176,7 +177,7 @@ func OnFloorArrival(newFloor int, pos int, activeE int) {
 			for i := 0; i < activeE; i++ {
 				//fmt.Printf("Cleared av i: %+v\n", CurrElev[i].AcceptedOrders)
 				SetAllLights(CurrElev[i]) // prøver å cleare lysene til alle heisene, hvis du får "index out of range" error
-																	// så troooor jeg det er denne for-løkken, men aner ikke hvorfor
+				// så troooor jeg det er denne for-løkken, men aner ikke hvorfor
 			}
 			fmt.Println("slutt\n")
 			Door_timer.Reset(3 * time.Second)
