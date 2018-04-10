@@ -19,16 +19,24 @@ var CurrElev = [elevio.NumElevators]elevio.Elevator{} //liste med elevs som main
 
 var firstTime bool = false //trengte dette + litt i OnFloorArrival for å intialisere når vi har flere heiser
 
+func UpdateAllElevs(floor int, pos int){
+
+	//CurrElev[pos].Floor = floor
+	//fmt.Printf("come at me bro pls\n")
+}
+
 func RecievedMSG(floor int, button int, position int, activeE int) {
 	var index int
-	fmt.Printf("posisjon. %d\n", position) // posisjon i lista, bør være 0 hvis du bare har en heis
+	//fmt.Printf("posisjon. %d\n", position) // posisjon i lista, bør være 0 hvis du bare har en heis
 	if floor != -10 {                      // se main:118
 		if AckMat[position][floor][button] != 2 {
 			AckMat[position][floor][button] = 1
+
 			//fmt.Printf("Received: %#v\n", AckMat[ID-1])
 			for i := 0; i < activeE; i++ {
 				if AckMat[i][floor][button] == AckMat[position][floor][button]-1 {
 					AckMat[i][floor][button]++
+
 					//fmt.Printf("we incremented! \n")
 				}
 			}
@@ -41,7 +49,10 @@ func RecievedMSG(floor int, button int, position int, activeE int) {
 			if counter == activeE {
 				for i := 0; i < activeE; i++ {
 					AckMat[i][floor][button] = 2
-					CurrElev[i].AcceptedOrders[floor][button] = 1 // Er egentlig veldig skeptisk til denne måten å akseptere
+					//fmt.Printf("Received: %#v\n", AckMat[i])
+					CurrElev[i].AcceptedOrders[floor][button] = 1
+					fmt.Printf("AccOrders: %+v\n", CurrElev[i].AcceptedOrders)
+					// Er egentlig veldig skeptisk til denne måten å akseptere
 					// ordre på, siden vi bare sender en gang og så går alt på
 					// logiske operasjoner.
 					//har en mistanke om at hver heis som kjører lager sin egen
@@ -51,23 +62,26 @@ func RecievedMSG(floor int, button int, position int, activeE int) {
 				}
 				index = costfunction.CostCalc(CurrElev, floor, button, activeE)
 				fmt.Printf("index: %d\n", index)
-				//kostfunksjonen vår! ser ikke ut til å gi rett index hver gang, men den er alltid den samme for begge heiser
+				//kostfunksjonen vår ser ikke ut til å gi rett index hver gang
 
 				CurrElev[index].Requests[floor][button] = true
-				for i := 0; i < activeE; i++ {
-					//fmt.Printf("Accepted av i : %+v\n", CurrElev[i].Requests)
-					AckMat[i][floor][button] = 0 //clearer ordren fra AckMat
 
-				}
 				//fmt.Printf("Detter er AckMat[1]: %+v \n", AckMat[1])
-				SetAllLights(CurrElev[index]) //tror denne bare burde sette lys på en heis, men det settes på begge..
+				SetAllLights(CurrElev[index])
+				for i := 0; i < activeE; i++ {
+					//CurrElev[i].AcceptedOrders[floor][button] = 0
+					AckMat[i][floor][button] = 0
+				}
 
 			}
 		}
 		for i := 0; i < elevio.NumFloors; i++ {
 			for j := 0; j < elevio.NumButtons; j++ {
 				if CurrElev[index].Requests[i][j] { //sjekker requests for den beste heisen, if true kjør OnRequestButtonPress
-					OnRequestButtonPress(i, elevio.ButtonType(j), index)
+					OnRequestButtonPress(i, elevio.ButtonType(j), index, activeE)
+					fmt.Printf("index2: %d\n", index)
+
+
 				}
 			}
 		}
@@ -79,7 +93,7 @@ func SetAllLights(es elevio.Elevator) {
 	var btn elevio.ButtonType = elevio.BT_Cab
 	for floor := 0; floor < elevio.NumFloors; floor++ {
 		if es.Requests[floor][btn] == true {
-			fmt.Printf("cab\n")
+
 			elevio.SetButtonLamp(btn, floor, true)
 		} else {
 			elevio.SetButtonLamp(btn, floor, false)
@@ -105,13 +119,18 @@ func OnInitBetweenFloors() {
 	firstTime = true
 }
 
-func OnRequestButtonPress(btn_floor int, btn_type elevio.ButtonType, pos int) {
-	fmt.Printf("pos i ORBP: %d\n", pos)
+func OnRequestButtonPress(btn_floor int, btn_type elevio.ButtonType, pos int, activeE int) {
+
 	switch CurrElev[pos].State {
 
 	case elevio.DoorOpen:
 
 		if CurrElev[pos].Floor == btn_floor {
+			// for i := 0; i < activeE; i++ {
+			// CurrElev[i] = requests.ClearAtCurrentFloor(CurrElev[pos])
+			// SetAllLights(CurrElev[i])
+			// }
+			CurrElev[pos] = requests.ClearRequests(CurrElev[pos])
 			CurrElev[pos] = requests.ClearAtCurrentFloor(CurrElev[pos])
 			SetAllLights(CurrElev[pos])
 			Door_timer.Reset(3 * time.Second)
@@ -124,21 +143,29 @@ func OnRequestButtonPress(btn_floor int, btn_type elevio.ButtonType, pos int) {
 		CurrElev[pos].Requests[btn_floor][btn_type] = true
 
 	case elevio.Idle:
+
 		if CurrElev[pos].Floor == btn_floor {
 
 			elevio.SetDoorOpenLamp(true)
 			CurrElev[pos].State = elevio.DoorOpen
+			// for i := 0; i < activeE; i++ {
+			// CurrElev[i] = requests.ClearAtCurrentFloor(CurrElev[pos])
+			// SetAllLights(CurrElev[i])
+			// }
+			CurrElev[pos] = requests.ClearRequests(CurrElev[pos])
 			CurrElev[pos] = requests.ClearAtCurrentFloor(CurrElev[pos])
 			SetAllLights(CurrElev[pos])
 			Door_timer.Reset(3 * time.Second)
 
 		} else {
-			fmt.Printf("her skal vi komme")
+			fmt.Printf("idle else\n")
 			CurrElev[pos].Requests[btn_floor][btn_type] = true
-			CurrElev[pos].Dir = requests.ChooseDirection(CurrElev[pos]) //tror denne får inn noe feil ved flere hesier
+			CurrElev[pos].Dir = requests.ChooseDirection(CurrElev[pos])
+
 			//ettersom en av heisene nesten alltid kjører opp
 			elevio.SetMotorDirection(CurrElev[pos].Dir)
 			CurrElev[pos].State = elevio.Moving
+			//fmt.Printf("pos i ORBP: %d\n", pos)
 		}
 
 	}
@@ -152,7 +179,10 @@ func OnFloorArrival(newFloor int, pos int, activeE int) {
 		elevio.SetMotorDirection(elevio.MD_Stop)
 		firstTime = false
 	}
-	fmt.Printf("on floor arrival\n")
+
+
+	//fmt.Printf("on floor arrival\n")
+  //fmt.Printf("pos i OFA %d\n", pos)
 	if Elev.Dir == elevio.MD_Up && newFloor == 3 {
 		fmt.Printf("stop då bro")
 		elevio.SetMotorDirection(elevio.MD_Stop)
@@ -161,6 +191,7 @@ func OnFloorArrival(newFloor int, pos int, activeE int) {
 	}
 	//fmt.Printf("\nOFA\n")
 	CurrElev[pos].Floor = newFloor
+	fmt.Printf("Info om heis %d: State: %d, Floor: %d\n", pos, CurrElev[pos].State, CurrElev[pos].Floor)
 	elevio.SetFloorIndicator(CurrElev[pos].Floor)
 	//fmt.Printf("state:   %d\n", Elevlist[pos].State)
 	switch CurrElev[pos].State {
@@ -174,13 +205,17 @@ func OnFloorArrival(newFloor int, pos int, activeE int) {
 			// for i := 0; i < activeE; i++ {
 			// 	fmt.Printf("Accepted: %+v\n", CurrElev[i].AcceptedOrders)
 			// }
+			// for i := 0; i < activeE; i++ {
+			// CurrElev[i] = requests.ClearAtCurrentFloor(CurrElev[pos])
+			// SetAllLights(CurrElev[i])
+			// }
+			//fmt.Printf( "requests: %+v\n", CurrElev[pos].Requests)
+			//CurrElev[pos] = requests.ClearRequests(CurrElev[pos])
+			//for i := 0; i < activeE; i++ {
 			CurrElev[pos] = requests.ClearAtCurrentFloor(CurrElev[pos])
-			for i := 0; i < activeE; i++ {
-				//fmt.Printf("Cleared av i: %+v\n", CurrElev[i].AcceptedOrders)
-				SetAllLights(CurrElev[i]) // prøver å cleare lysene til alle heisene, hvis du får "index out of range" error
-				// så troooor jeg det er denne for-løkken, men aner ikke hvorfor
-			}
-			fmt.Println("slutt\n")
+			//}
+			CurrElev[pos] = requests.ClearRequests(CurrElev[pos])
+			SetAllLights(CurrElev[pos])
 			Door_timer.Reset(3 * time.Second)
 
 			CurrElev[pos].State = elevio.DoorOpen

@@ -71,12 +71,16 @@ func ShouldStop(e Elevator) bool {
 }
 
 func ClearAtCurrentFloor(e Elevator) Elevator {
+
+		for btn := 0; btn < NumButtons-1; btn++ {
+			e.AcceptedOrders[e.Floor][btn] = 0
+		}
+	return e //Why does it return an elevator-type?
+}
+
+func ClearRequests(e Elevator) Elevator {
 	for button := 0; button < NumButtons; button++ {
 		e.Requests[e.Floor][button] = false
-	} //Clears both directions
-	for btn := 0; btn < NumButtons-1; btn++ {
-		e.AcceptedOrders[e.Floor][btn] = 0
-
-	} //Clears both directions
-	return e //Why does it return an elevator-type?
+	}
+	return e
 }

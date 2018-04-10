@@ -3,6 +3,8 @@ package costfunction
 import (
 	"../elevio"
 	"../requests"
+	//"fmt"
+	"math"
 )
 
 var TRAVEL_TIME float64 = 2.5
@@ -24,6 +26,16 @@ func timeToIdle(e elevio.Elevator) float64 {
 	switch e.State {
 	case elevio.Idle:
 		e.Dir = requests.ChooseDirection(e)
+		for floor := 0; floor < elevio.NumFloors; floor++ {
+			for button := 0; button < elevio.NumButtons-1; button++ {
+				if e.AcceptedOrders[floor][button] == 1 {
+					duration = duration + math.Abs(float64(e.Floor - floor))
+					//fmt.Printf("duration in loop %f\n", duration)
+				}
+			}
+		}
+
+		//fmt.Printf("duration time %f\n", duration)
 		if e.Dir == elevio.MD_Stop {
 			return duration
 		}
@@ -47,17 +59,24 @@ func timeToIdle(e elevio.Elevator) float64 {
 		}
 		e.Floor += int(e.Dir)
 		duration += TRAVEL_TIME
+
 	}
+
 }
 
 func CostCalc(elevlist [elevio.NumElevators]elevio.Elevator, floor int, button int, activeElevators int) int {
+
 	var minCost float64 = 500
 	//var bestElev elevio.Elevator
 	var index int
+	var time float64
 	for i := 0; i < activeElevators; i++ {
-		time := timeToIdle(elevlist[i])
+		time = timeToIdle(elevlist[i])
+		// fmt.Printf("floor til heis %d: %d\n", i, elevlist[i].Floor)
+		// fmt.Printf("time: %f , index: %d\n", time, i)
 		if time < minCost {
 			minCost = time
+
 			//bestElev = elevlist[i]
 			index = i
 		}

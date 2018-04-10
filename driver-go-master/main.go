@@ -62,11 +62,23 @@ func main() {
 
 	msgTrans := make(chan ElevMsg)
 	msgRec := make(chan ElevMsg)
-	go bcast.Transmitter(25000, msgTrans)
-	go bcast.Receiver(25000, msgRec)
+	msgTransElevator := make(chan elevio.Elevator)
+	msgRecElevator := make(chan elevio.Elevator)
+
+	go bcast.Transmitter(25000, msgTrans, msgTransElevator)
+	go bcast.Receiver(25000, msgRec, msgRecElevator)
 
 	var pos int // blir oppdatert (nesten) med en gang heisen kommer online
 	var sentmsg = ElevMsg{id, fsm.BP, fsm.CurrElev, pos}
+
+	var state elevio.ElevState
+	var dir elevio.MotorDirection
+	var floor int
+	var req [elevio.NumFloors][elevio.NumButtons]bool
+	var acco [elevio.NumFloors][elevio.NumButtons - 1]int
+
+
+	var statemsg = elevio.Elevator{state, dir, floor, req, acco, pos}
 
 	// go func() {
 	// 	for {
@@ -85,18 +97,36 @@ func main() {
 
 				sentmsg.ButtonPushed[0] = a.Floor
 				sentmsg.ButtonPushed[1] = int(a.Button)
-				msgTrans <- sentmsg
+
+				for i := 0; i < 3; i++ {
+						msgTrans <- sentmsg
+
+						sleep(5ms)
+
+						if ackReceived(ackRecchan){
+								break
+						}
+				}
+
+
 			} else { // cab trykk, oppdaterer Requests med en gang og setter lys
 				sentmsg.ElevList[pos].Requests[a.Floor][a.Button] = true
 				elevio.SetButtonLamp(a.Button, a.Floor, true)
 				//fmt.Println("orders in queue: \n", sentmsg.ElevList.Requests)
-				fsm.OnRequestButtonPress(a.Floor, a.Button, pos) //får den til å kjøre
+				fsm.OnRequestButtonPress(a.Floor, a.Button, pos, activeElevs) //får den til å kjøre
 
 			}
 
 		case a := <-drv_floors: // til info så kjøres denne bare en gang når man kommer til en etasje, ikke loop
 			fsm.OnFloorArrival(a, pos, activeElevs)
+			statemsg.Floor = a
+			msgTransElevator <- statemsg
+
+
+			//fmt.Printf("case drv-floors\n")
 			//msgTrans <- sentmsg
+		case b := <- msgRecElevator:
+			fsm.UpdateAllElevs(b.Floor, b.Position)
 
 		case p := <-peerUpdateCh:
 			peers.UpdatePeers(p)
@@ -114,6 +144,7 @@ func main() {
 			teller = 0
 
 		case a := <-msgRec:
+			ackTrans <- ack{myid, a.sender}
 			fsm.RecievedMSG(a.ButtonPushed[0], a.ButtonPushed[1], a.ListPos, activeElevs)
 			sentmsg.ButtonPushed[0] = -10 // same as init value so we dont keep sending the same buttonpress forever
 			// trengs egentlig bare når vi sender melidnger på heartbeat, ikke knappetrykk
