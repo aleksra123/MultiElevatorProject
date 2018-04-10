@@ -133,7 +133,7 @@ func OnRequestButtonPress(btn_floor int, btn_type elevio.ButtonType, pos int) {
 			Door_timer.Reset(3 * time.Second)
 
 		} else {
-
+			fmt.Printf("her skal vi komme")
 			CurrElev[pos].Requests[btn_floor][btn_type] = true
 			CurrElev[pos].Dir = requests.ChooseDirection(CurrElev[pos]) //tror denne får inn noe feil ved flere hesier
 			//ettersom en av heisene nesten alltid kjører opp
@@ -152,8 +152,9 @@ func OnFloorArrival(newFloor int, pos int, activeE int) {
 		elevio.SetMotorDirection(elevio.MD_Stop)
 		firstTime = false
 	}
-
+	fmt.Printf("on floor arrival\n")
 	if Elev.Dir == elevio.MD_Up && newFloor == 3 {
+		fmt.Printf("stop då bro")
 		elevio.SetMotorDirection(elevio.MD_Stop)
 	} else if Elev.Dir == elevio.MD_Down && newFloor == 0 {
 		elevio.SetMotorDirection(elevio.MD_Stop)
