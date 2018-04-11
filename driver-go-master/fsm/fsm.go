@@ -30,53 +30,55 @@ func RecievedMSG(floor int, button int, position int, e elevio.Elevator, activeE
 
 	CurrElev[position].Position = position
 	CurrElev[position].Floor = e.Floor
-	CurrElev[position].AcceptedOrders = e.AcceptedOrders
-	//CurrElev[position].State = e.State
 
 	if floor != -10 {                      // se main:118
+	//
+	// 	if AckMat[position][floor][button] != 2 {
+	// 		AckMat[position][floor][button] = 1
+	//
+	// 		for i := 0; i < activeE; i++ {
+	// 			if AckMat[i][floor][button] == AckMat[position][floor][button]-1 {
+	// 				AckMat[i][floor][button]++
+	// 			}
+	// 		}
+	// 		var counter int
+	// 		for i := 0; i < activeE; i++ {
+	// 			if AckMat[i][floor][button] == 1 {
+	// 				counter++
+	// 			}
+	// 		}
+	// 		if counter == activeE {
+	// 			for i := 0; i < activeE; i++ {
+	// 				AckMat[i][floor][button] = 2
+	// 				//fmt.Printf("Received: %#v\n", AckMat[i])
+	// 				CurrElev[i].AcceptedOrders[floor][button] = 1
 
-		if AckMat[position][floor][button] != 2 {
-			AckMat[position][floor][button] = 1
 
-			for i := 0; i < activeE; i++ {
-				if AckMat[i][floor][button] == AckMat[position][floor][button]-1 {
-					AckMat[i][floor][button]++
-				}
-			}
-			var counter int
-			for i := 0; i < activeE; i++ {
-				if AckMat[i][floor][button] == 1 {
-					counter++
-				}
-			}
-			if counter == activeE {
 				for i := 0; i < activeE; i++ {
-					AckMat[i][floor][button] = 2
-					//fmt.Printf("Received: %#v\n", AckMat[i])
 					CurrElev[i].AcceptedOrders[floor][button] = 1
-
-					fmt.Printf("AccOrders: %+v\n", CurrElev[i].AcceptedOrders)
-
+		 			fmt.Printf("AccOrders: %+v\n", CurrElev[i].AcceptedOrders)
 				}
-				index = costfunction.CostCalc(CurrElev, activeE)
-				fmt.Printf("index: %d\n", index)
-				CurrElev[index].Requests[floor][button] = true
-				SetAllLights(CurrElev[index])
+				if floor != e.Floor {
+					index = costfunction.CostCalc(CurrElev, activeE)
+					fmt.Printf("index: %d\n", index)
+					CurrElev[index].Requests[floor][button] = true
+					SetAllLights(CurrElev[index])
+				}	
 
-				for i := 0; i < activeE; i++ {
-					AckMat[i][floor][button] = 0
-				}
-
-			}
-		}
+		// 		for i := 0; i < activeE; i++ {
+		// 			AckMat[i][floor][button] = 0
+		// 		}
+		//
+		// 	}
+		// }
 		for i := 0; i < elevio.NumFloors; i++ {
 			for j := 0; j < elevio.NumButtons; j++ {
 				if CurrElev[index].Requests[i][j] {
 					OnRequestButtonPress(i, elevio.ButtonType(j), index, activeE)
-				}
 			}
 		}
 	}
+ }
 }
 
 func SetAllLights(es elevio.Elevator) {
@@ -120,6 +122,8 @@ func OnRequestButtonPress(btn_floor int, btn_type elevio.ButtonType, pos int, ac
 
 	fmt.Printf("Floor til heis 0: %d\n", CurrElev[0].Floor)
 	fmt.Printf("Floor til heis 1: %d\n", CurrElev[1].Floor)
+	fmt.Printf("AccOrders: %+v\n", CurrElev[0].AcceptedOrders)
+	fmt.Printf("AccOrders: %+v\n", CurrElev[1].AcceptedOrders)
 
 	switch CurrElev[pos].State {
 
@@ -173,7 +177,7 @@ func OnRequestButtonPress(btn_floor int, btn_type elevio.ButtonType, pos int, ac
 }
 
 func OnFloorArrival(newFloor int, pos int, activeE int) {
-	fmt.Println(newFloor)
+	//fmt.Println(newFloor)
 
 	if firstTime {
 		Elev.State = elevio.Idle

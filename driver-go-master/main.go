@@ -82,7 +82,7 @@ func main() {
 	var pos int // blir oppdatert (nesten) med en gang heisen kommer online
 	var sentmsg = ElevMsg{id, fsm.BP, fsm.CurrElev, pos}
 	var ackmsg = AckMsg{}
-	var correctAck bool
+	var correctAck bool = false
 
 
 	for {
@@ -96,11 +96,8 @@ func main() {
 				sentmsg.ButtonPushed[1] = int(a.Button)
 				//msgTrans <- sentmsg
 				for i := 0; i < 3; i++ {
-						fmt.Printf("melding før trans\n")
 						msgTrans <- sentmsg
-
 						time.Sleep(5*time.Millisecond)
-						fmt.Printf("melding før if set\n")
 						if correctAck{
 							fmt.Printf("WE HAVE ACKED!\n")
 							break
@@ -108,8 +105,8 @@ func main() {
 						}
 					}
 
-					sentmsg.ElevList[pos].AcceptedOrders[a.Floor][a.Button] = 1
-					msgTrans <- sentmsg
+					// sentmsg.ElevList[pos].AcceptedOrders[a.Floor][int(a.Button)] = 1
+					// msgTrans <- sentmsg
 
 
 
@@ -130,7 +127,7 @@ func main() {
 
 
 		case a := <-drv_floors: // til info så kjøres denne bare en gang når man kommer til en etasje, ikke loop
-			fmt.Printf("case floors\n")
+
 			fsm.OnFloorArrival(a, pos, activeElevs)
 			//sentmsg.ElevList[pos].State = fsm.GetState(pos)
 
