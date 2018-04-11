@@ -3,7 +3,7 @@ package costfunction
 import (
 	"../elevio"
 	"../requests"
-	//"fmt"
+	"fmt"
 	"math"
 )
 
@@ -64,16 +64,30 @@ func timeToIdle(e elevio.Elevator) float64 {
 
 }
 
-func CostCalc(elevlist [elevio.NumElevators]elevio.Elevator, floor int, button int, activeElevators int) int {
+func nycostfunc(e elevio.Elevator) float64 {
+	var duration float64 = 0
+	for floor := 0; floor < elevio.NumFloors; floor++ {
+		for button := 0; button < elevio.NumButtons-1; button++ {
+			if e.AcceptedOrders[floor][button] == 1 {
+				duration = duration + math.Abs(float64(e.Floor - floor))
+				return duration
+			}
+		}
+	}
+	return duration
+}
+
+func CostCalc(elevlist [elevio.NumElevators]elevio.Elevator, activeElevators int) int {
 
 	var minCost float64 = 500
 	//var bestElev elevio.Elevator
 	var index int
 	var time float64
 	for i := 0; i < activeElevators; i++ {
-		time = timeToIdle(elevlist[i])
+		elevlist[i].State = 0
+		time = nycostfunc(elevlist[i])
 		// fmt.Printf("floor til heis %d: %d\n", i, elevlist[i].Floor)
-		// fmt.Printf("time: %f , index: %d\n", time, i)
+		 fmt.Printf("time: %f , index: %d\n", time, i)
 		if time < minCost {
 			minCost = time
 
