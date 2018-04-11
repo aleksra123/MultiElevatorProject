@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"time"
 
 	"../Network-go-master/network/bcast"
 	"../Network-go-master/network/peers"
@@ -45,6 +46,11 @@ func main() {
 		fsm.OnInitBetweenFloors()
 	}
 
+	type AckMsg struct {
+		orgsend int
+		receiver int
+	}
+
 	type ElevMsg struct {
 		ElevatorID   string
 		ButtonPushed [2]int
@@ -63,31 +69,21 @@ func main() {
 
 	msgTrans := make(chan ElevMsg)
 	msgRec := make(chan ElevMsg)
-	msgTransElevator := make(chan elevio.Elevator)
-	msgRecElevator := make(chan elevio.Elevator)
 
-	go bcast.Transmitter(25000, msgTrans, msgTransElevator)
-	go bcast.Receiver(25000, msgRec, msgRecElevator)
+	msgAckT := make(chan AckMsg)
+	msgAckR := make(chan AckMsg)
+
+	// msgTransElevator := make(chan elevio.Elevator)
+	// msgRecElevator := make(chan elevio.Elevator)
+
+	go bcast.Transmitter(25000, msgTrans, msgAckT )
+	go bcast.Receiver(25000, msgRec, msgAckR)
 
 	var pos int // blir oppdatert (nesten) med en gang heisen kommer online
 	var sentmsg = ElevMsg{id, fsm.BP, fsm.CurrElev, pos}
+	var ackmsg = AckMsg{}
+	var correctAck bool
 
-	// var state elevio.ElevState
-	// var dir elevio.MotorDirection
-	// var floor int
-	// var req [elevio.NumFloors][elevio.NumButtons]bool
-	// var acco [elevio.NumFloors][elevio.NumButtons - 1]int
-
-
-	//var statemsg = elevio.Elevator{state, dir, floor, req, acco, pos}
-
-	// go func() {
-	// 	for {
-	// 		msgTrans <- sentmsg
-	// 		time.Sleep(250 * time.Millisecond)
-	// 	}
-	// }()
-	//sender melding ved knappetrykk atm, lettere debug
 
 	for {
 		select {
@@ -98,16 +94,24 @@ func main() {
 
 				sentmsg.ButtonPushed[0] = a.Floor
 				sentmsg.ButtonPushed[1] = int(a.Button)
-				msgTrans <- sentmsg
-				// for i := 0; i < 3; i++ {
-				// 		msgTrans <- sentmsg
-				//
-				// 		sleep(5ms)
-				//
-				// 		if ackReceived(ackRecchan){
-				// 				break
-				// 		}
-				// }
+				//msgTrans <- sentmsg
+				for i := 0; i < 3; i++ {
+						fmt.Printf("melding før trans\n")
+						msgTrans <- sentmsg
+
+						time.Sleep(5*time.Millisecond)
+						fmt.Printf("melding før if set\n")
+						if correctAck{
+							fmt.Printf("WE HAVE ACKED!\n")
+							break
+
+						}
+					}
+
+					sentmsg.ElevList[pos].AcceptedOrders[a.Floor][a.Button] = 1
+					msgTrans <- sentmsg
+
+
 
 
 			} else { // cab trykk, oppdaterer Requests med en gang og setter lys
@@ -118,21 +122,21 @@ func main() {
 
 			}
 
+		case a := <- msgAckR:
+			//fmt.Printf("kommer vi hit ? msgackr\n")
+			if a.orgsend == pos{
+					correctAck = true
+				}
+
+
 		case a := <-drv_floors: // til info så kjøres denne bare en gang når man kommer til en etasje, ikke loop
+			fmt.Printf("case floors\n")
 			fsm.OnFloorArrival(a, pos, activeElevs)
 			//sentmsg.ElevList[pos].State = fsm.GetState(pos)
+
 			sentmsg.ElevList[pos].Floor = a
 			msgTrans <- sentmsg
 
-
-			// statemsg.Floor = a
-			// msgTransElevator <- statemsg
-
-
-			//fmt.Printf("case drv-floors\n")
-			//msgTrans <- sentmsg
-		// case b := <- msgRecElevator:
-		// 	fsm.UpdateAllElevs(b.Floor, b.Position)
 
 		case p := <-peerUpdateCh:
 			peers.UpdatePeers(p)
@@ -142,6 +146,7 @@ func main() {
 				if i == id {
 					pos = teller
 					sentmsg.ListPos = pos
+					//ackmsg.myid = pos
 					//sentmsg.ListPos = pos //vett egentlig ikkje om elvator structen trenge Position men
 					msgTrans <- sentmsg
 					fmt.Printf("pos: %d\n", pos)
@@ -150,8 +155,14 @@ func main() {
 			}
 			teller = 0
 
+		// 	//msgAckT <- AckMsg{myid, a.sender}
+
 		case a := <-msgRec:
-			//ackTrans <- ack{myid, a.sender}
+			//fmt.Printf("kommer vi hit ? msgRec\n")
+			ackmsg.orgsend = a.ListPos
+			ackmsg.receiver = pos
+			msgAckT <- ackmsg
+
 			fsm.RecievedMSG(a.ButtonPushed[0], a.ButtonPushed[1], a.ListPos, a.ElevList[a.ListPos], activeElevs)
 			sentmsg.ButtonPushed[0] = -10 // same as init value so we dont keep sending the same buttonpress forever
 			// trengs egentlig bare når vi sender melidnger på heartbeat, ikke knappetrykk
