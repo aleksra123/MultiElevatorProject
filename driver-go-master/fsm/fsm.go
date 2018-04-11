@@ -101,10 +101,10 @@ func GetState(pos int) elevio.ElevState {
 func OnRequestButtonPress(btn_floor int, btn_type elevio.ButtonType, pos int, activeE int) {
 
 
-	// fmt.Printf("Floor til heis 0: %d\n", CurrElev[0].Floor)
-	// fmt.Printf("Floor til heis 1: %d\n", CurrElev[1].Floor)
-	 fmt.Printf("AccOrders: %+v\n", CurrElev[0].AcceptedOrders)
-	 //fmt.Printf("AccOrders: %+v\n", CurrElev[1].AcceptedOrders)
+	fmt.Printf("Floor til heis 0: %d\n", CurrElev[0].Floor)
+	fmt.Printf("Floor til heis 1: %d\n", CurrElev[1].Floor)
+	 // fmt.Printf("AccOrders: %+v\n", CurrElev[0].AcceptedOrders)
+	 // fmt.Printf("AccOrders: %+v\n", CurrElev[1].AcceptedOrders)
 
 	switch CurrElev[pos].State {
 
@@ -204,8 +204,12 @@ func OnFloorArrival(newFloor int, pos int, activeE int) {
 			CurrElev[pos].State = elevio.DoorOpen
 		}
 	}
-	 fmt.Printf("AccOrders i OnFloorArrival: %+v\n", CurrElev[0].AcceptedOrders)
-	 //fmt.Printf("AccOrders i OnFloorArrival: %+v\n", CurrElev[1].AcceptedOrders)
+	 // fmt.Printf("AccOrders i OnFloorArrival: %+v\n", CurrElev[0].AcceptedOrders)
+	 // fmt.Printf("AccOrders i OnFloorArrival: %+v\n", CurrElev[1].AcceptedOrders)
+	 // fmt.Printf("Requests: %+v\n", CurrElev[0].Requests)
+	 // fmt.Printf("Requests: %+v\n", CurrElev[1].Requests)
+	 fmt.Printf("Floor til heis 0: %d\n", CurrElev[0].Floor)
+ 	fmt.Printf("Floor til heis 1: %d\n", CurrElev[1].Floor)
 }
 
 
