@@ -69,6 +69,7 @@ func nycostfunc(e elevio.Elevator) float64 {
 	for floor := 0; floor < elevio.NumFloors; floor++ {
 		for button := 0; button < elevio.NumButtons-1; button++ {
 			if e.AcceptedOrders[floor][button] == 1 {
+				fmt.Printf("test\n")
 				duration = duration + math.Abs(float64(e.Floor - floor))
 				return duration
 			}

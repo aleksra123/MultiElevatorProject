@@ -10,6 +10,7 @@ import (
 	"../Network-go-master/network/peers"
 	"./elevio"
 	"./fsm"
+	"./requests"
 )
 
 func main() {
@@ -90,7 +91,7 @@ func main() {
 		case a := <-drv_buttons:
 
 			if a.Button != 2 { //hvis det ikke er cab, så sender vi det
-				//fmt.Printf("%+v\n", a)
+
 
 				sentmsg.ButtonPushed[0] = a.Floor
 				sentmsg.ButtonPushed[1] = int(a.Button)
@@ -104,10 +105,10 @@ func main() {
 
 						}
 					}
-
-					// sentmsg.ElevList[pos].AcceptedOrders[a.Floor][int(a.Button)] = 1
-					// msgTrans <- sentmsg
-
+					 if a.Floor != sentmsg.ElevList[pos].Floor {
+						 sentmsg.ElevList[pos].AcceptedOrders[a.Floor][int(a.Button)] = 1
+						 msgTrans <- sentmsg
+					 }
 
 
 
@@ -130,7 +131,13 @@ func main() {
 
 			fsm.OnFloorArrival(a, pos, activeElevs)
 			//sentmsg.ElevList[pos].State = fsm.GetState(pos)
+			if requests.ShouldStop(sentmsg.ElevList[pos]){
+				fmt.Printf("er dette lov? \n")
 
+				sentmsg.ElevList[pos].AcceptedOrders[a][0] = 0
+				sentmsg.ElevList[pos].AcceptedOrders[a][1] = 0
+
+			}
 			sentmsg.ElevList[pos].Floor = a
 			msgTrans <- sentmsg
 
