@@ -145,7 +145,7 @@ func main() {
 			}
 			fmt.Printf("OFA\n")
 			sentmsg.ElevList[pos].Floor = a
-			//msgTrans <- sentmsg
+			msgTrans <- sentmsg
 
 
 		case p := <-peerUpdateCh:
@@ -156,7 +156,7 @@ func main() {
 				if i == id {
 					pos = teller
 					sentmsg.ListPos = pos
-					//msgTrans <- sentmsg
+					msgTrans <- sentmsg
 					fmt.Printf("pos: %d\n", pos)
 				}
 				teller++
@@ -178,7 +178,7 @@ func main() {
 				a.ElevList[pos].AcceptedOrders[a.ButtonPushed[0]][a.ButtonPushed[1]] = 1
 			}
 
-				fsm.RecievedMSG(a.ButtonPushed[0], a.ButtonPushed[1], a.ListPos, a.ElevList[a.ListPos], activeElevs)
+				fsm.RecievedMSG(a.ButtonPushed[0], a.ButtonPushed[1], pos, a.ElevList[pos], activeElevs)
 				sentmsg.ButtonPushed[0] = -10 // same as init value so we dont keep sending the same buttonpress forever
 				// trengs egentlig bare når vi sender melidnger på heartbeat, ikke knappetrykk
 

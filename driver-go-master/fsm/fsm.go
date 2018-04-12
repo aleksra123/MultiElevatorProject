@@ -104,10 +104,6 @@ func OnInitBetweenFloors() {
 	firstTime = true
 }
 
-func GetState(pos int) elevio.ElevState {
-
-	return CurrElev[pos].State
-}
 
 func OnRequestButtonPress(btn_floor int, btn_type elevio.ButtonType, pos int, activeE int) {
 
@@ -219,10 +215,10 @@ func OnFloorArrival(newFloor int, pos int, activeE int) {
 	 // fmt.Printf("AccOrders i OnFloorArrival: %+v\n", CurrElev[1].AcceptedOrders)
 	 // fmt.Printf("Requests: %+v\n", CurrElev[0].Requests)
 	 // fmt.Printf("Requests: %+v\n", CurrElev[1].Requests)
-	 // fmt.Printf("pos til heis 0: %d\n", CurrElev[0].Position)
-	 // fmt.Printf("pos til heis 1: %d\n", CurrElev[1].Position)
+	 fmt.Printf("pos til heis 0: %d\n", CurrElev[0].Position)
+	 fmt.Printf("pos til heis 1: %d\n", CurrElev[1].Position)
 	 fmt.Printf("Floor til heis 0: %d\n", CurrElev[0].Floor)
- 	 // fmt.Printf("Floor til heis 1: %d\n", CurrElev[1].Floor)
+ 	 fmt.Printf("Floor til heis 1: %d\n", CurrElev[1].Floor)
 }
 
 
