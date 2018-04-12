@@ -30,15 +30,16 @@ func RecievedMSG(floor int, button int, position int, e elevio.Elevator, activeE
 	var index int
 	// var lastbtn int = int(prev.Button)
 	CurrElev[position].Position = position
-	CurrElev[position].Floor = e.Floor
+	//CurrElev[position].Floor = e.Floor
 	// CurrElev[position].AcceptedOrders[e.Floor][0] = e.AcceptedOrders[e.Floor][0]
 	// CurrElev[position].AcceptedOrders[e.Floor][1] = e.AcceptedOrders[e.Floor][1]
 	if floor != -10   { //!(prev.Floor == floor && lastbtn == button)
-			//fmt.Printf("hei\n")
+			fmt.Printf("hei\n")
 					for i := 0; i < activeE; i++ {
 						CurrElev[i].AcceptedOrders[floor][button] = e.AcceptedOrders[floor][button]
 
 					}
+					fmt.Printf("AO: %+v\n", e.AcceptedOrders)
 					if  floor != e.Floor && CurrElev[position].AcceptedOrders[floor][button] == 1 { //floor != e.Floor &&
 						index = costfunction.CostCalc(CurrElev, activeE)
 						fmt.Printf("index: %d\n", index)
@@ -46,6 +47,7 @@ func RecievedMSG(floor int, button int, position int, e elevio.Elevator, activeE
 						// fmt.Printf("Request: %+v\n", CurrElev[index].Requests)
 						SetAllLights(CurrElev[index])
 					} else {
+						fmt.Printf("her ska me ikkje vær\n")
 						elevio.SetDoorOpenLamp(true)
 						CurrElev[position].State = elevio.DoorOpen
 						Door_timer.Reset(3 * time.Second)
@@ -60,6 +62,11 @@ func RecievedMSG(floor int, button int, position int, e elevio.Elevator, activeE
  }
  // prev.Floor = floor
  // prev.Button = elevio.ButtonType(button)
+}
+
+func NewFloor(floor int, pos int){
+
+	CurrElev[pos].Floor = floor
 }
 
 func SetAllLights(es elevio.Elevator) {
@@ -101,8 +108,8 @@ func GetState(pos int) elevio.ElevState {
 func OnRequestButtonPress(btn_floor int, btn_type elevio.ButtonType, pos int, activeE int) {
 
 
-	fmt.Printf("Floor til heis 0: %d\n", CurrElev[0].Floor)
-	fmt.Printf("Floor til heis 1: %d\n", CurrElev[1].Floor)
+	// fmt.Printf("Floor til heis 0: %d\n", CurrElev[0].Floor)
+	// fmt.Printf("Floor til heis 1: %d\n", CurrElev[1].Floor)
 	 // fmt.Printf("AccOrders: %+v\n", CurrElev[0].AcceptedOrders)
 	 // fmt.Printf("AccOrders: %+v\n", CurrElev[1].AcceptedOrders)
 

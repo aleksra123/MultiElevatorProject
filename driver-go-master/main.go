@@ -4,7 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
-	"time"
+	//"time"
 
 	"../Network-go-master/network/bcast"
 	"../Network-go-master/network/peers"
@@ -12,6 +12,8 @@ import (
 	"./fsm"
 	"./requests"
 )
+
+
 
 func main() {
 
@@ -48,15 +50,16 @@ func main() {
 	}
 
 	type AckMsg struct {
-		orgsend int
-		receiver int
+		Orgsend int
+		Receiver int
 	}
 
 	type ElevMsg struct {
 		ElevatorID   string
 		ButtonPushed [2]int
 		ElevList     [elevio.NumElevators]elevio.Elevator //liste med alle heisene
-		ListPos      int                                  //posisjonen i ElevList, oppdateres i peerupdate.
+		ListPos      int
+		Msgtype      int    // 1 e BP, 2 e floor og 3 e pos
 	}
 
 	var id string
@@ -73,6 +76,7 @@ func main() {
 
 	msgAckT := make(chan AckMsg)
 	msgAckR := make(chan AckMsg)
+	//correctAck:= make(chan bool)
 
 	// msgTransElevator := make(chan elevio.Elevator)
 	// msgRecElevator := make(chan elevio.Elevator)
@@ -81,10 +85,10 @@ func main() {
 	go bcast.Receiver(25000, msgRec, msgAckR)
 
 	var pos int // blir oppdatert (nesten) med en gang heisen kommer online
-	var sentmsg = ElevMsg{id, fsm.BP, fsm.CurrElev, pos}
-	var ackmsg = AckMsg{}
-	var correctAck bool = false
-
+	var sentmsg = ElevMsg{}
+	// var ackmsg = AckMsg{}
+	// var correctAck bool = false
+	//go ready()
 
 	for {
 		select {
@@ -95,20 +99,26 @@ func main() {
 
 				sentmsg.ButtonPushed[0] = a.Floor
 				sentmsg.ButtonPushed[1] = int(a.Button)
-				//msgTrans <- sentmsg
-				for i := 0; i < 3; i++ {
-						msgTrans <- sentmsg
-						time.Sleep(5*time.Millisecond)
-						if correctAck{
-							fmt.Printf("WE HAVE ACKED!\n")
-							break
+				sentmsg.Msgtype = 1
 
-						}
-					}
-					 if a.Floor != sentmsg.ElevList[pos].Floor {
-						 sentmsg.ElevList[pos].AcceptedOrders[a.Floor][int(a.Button)] = 1
-						 msgTrans <- sentmsg
-					 }
+				msgTrans <- sentmsg
+				// for i := 0; i < 3; i++ {
+				// 		msgTrans <- sentmsg
+				// 		time.Sleep(5*time.Millisecond)
+				//
+				// 	if  correctAck{
+				// 			fmt.Printf("WE HAVE ACKED!\n")
+				// 			correctAck = false
+				// 			break
+				//
+				// 		}
+				//
+				//
+				// 	}
+				// if a.Floor != sentmsg.ElevList[pos].Floor {
+				// 	 sentmsg.ElevList[pos].AcceptedOrders[a.Floor][int(a.Button)] = 1
+				// 	 msgTrans <- sentmsg
+				// }
 
 
 
@@ -122,8 +132,9 @@ func main() {
 
 		case a := <- msgAckR:
 			//fmt.Printf("kommer vi hit ? msgackr\n")
-			if a.orgsend == pos{
-					correctAck = true
+			if a.Orgsend == pos{
+				fmt.Printf("ack\n")
+
 				}
 
 
@@ -132,13 +143,15 @@ func main() {
 			fsm.OnFloorArrival(a, pos, activeElevs)
 			//sentmsg.ElevList[pos].State = fsm.GetState(pos)
 			if requests.ShouldStop(sentmsg.ElevList[pos]){
-				fmt.Printf("er dette lov? \n")
+				//fmt.Printf("er dette lov? \n")
 
 				sentmsg.ElevList[pos].AcceptedOrders[a][0] = 0
 				sentmsg.ElevList[pos].AcceptedOrders[a][1] = 0
 
 			}
+			fmt.Printf("OFA\n")
 			sentmsg.ElevList[pos].Floor = a
+			sentmsg.Msgtype = 2
 			msgTrans <- sentmsg
 
 
@@ -162,15 +175,23 @@ func main() {
 		// 	//msgAckT <- AckMsg{myid, a.sender}
 
 		case a := <-msgRec:
-			//fmt.Printf("kommer vi hit ? msgRec\n")
-			ackmsg.orgsend = a.ListPos
-			ackmsg.receiver = pos
-			msgAckT <- ackmsg
 
-			fsm.RecievedMSG(a.ButtonPushed[0], a.ButtonPushed[1], a.ListPos, a.ElevList[a.ListPos], activeElevs)
-			sentmsg.ButtonPushed[0] = -10 // same as init value so we dont keep sending the same buttonpress forever
-			// trengs egentlig bare når vi sender melidnger på heartbeat, ikke knappetrykk
+			// ackmsg.orgsend = a.ListPos
+			// //fmt.Printf("orgsend %d\n", a.ListPos)
+			// ackmsg.receiver = pos
+			// //fmt.Printf("receiver %d\n", pos)
+			// msgAckT <- ackmsg
+			if a.Msgtype == 2 {
 
+				fsm.NewFloor(a.ElevList[pos].Floor, a.ListPos)
+			}
+
+			if a.Msgtype == 1 {
+				a.ElevList[pos].AcceptedOrders[a.ButtonPushed[0]][a.ButtonPushed[1]] = 1
+				fsm.RecievedMSG(a.ButtonPushed[0], a.ButtonPushed[1], a.ListPos, a.ElevList[a.ListPos], activeElevs)
+				sentmsg.ButtonPushed[0] = -10 // same as init value so we dont keep sending the same buttonpress forever
+				// trengs egentlig bare når vi sender melidnger på heartbeat, ikke knappetrykk
+			}
 		case a := <-drv_obstr:
 			fmt.Printf("%+v\n", a)
 			if a {
