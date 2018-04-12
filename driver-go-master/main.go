@@ -4,7 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
-	//"time"
+	"time"
 
 	"../Network-go-master/network/bcast"
 	"../Network-go-master/network/peers"
@@ -86,8 +86,10 @@ func main() {
 
 	var pos int // blir oppdatert (nesten) med en gang heisen kommer online
 	var sentmsg = ElevMsg{}
-	// var ackmsg = AckMsg{}
-	// var correctAck bool = false
+	sentmsg.ButtonPushed = fsm.BP
+	sentmsg.ElevList = fsm.CurrElev
+	var ackmsg = AckMsg{}
+	var CorrectAck bool = false
 	//go ready()
 
 	for {
@@ -99,29 +101,32 @@ func main() {
 
 				sentmsg.ButtonPushed[0] = a.Floor
 				sentmsg.ButtonPushed[1] = int(a.Button)
-				sentmsg.Msgtype = 1
+				//sentmsg.Msgtype = 1
 
-				msgTrans <- sentmsg
-				// for i := 0; i < 3; i++ {
-				// 		msgTrans <- sentmsg
-				// 		time.Sleep(5*time.Millisecond)
-				//
-				// 	if  correctAck{
-				// 			fmt.Printf("WE HAVE ACKED!\n")
-				// 			correctAck = false
-				// 			break
+				//msgTrans <- sentmsg
+				for i := 0; i < 3; i++ {
+						msgTrans <- sentmsg
+						time.Sleep(5*time.Millisecond)
+
+					if  CorrectAck{
+							fmt.Printf("WE HAVE ACKED!\n")
+							CorrectAck = false
+							break
+					}
+				}
 
 			} else { // cab trykk, oppdaterer Requests med en gang og setter lys
 				sentmsg.ElevList[pos].Requests[a.Floor][a.Button] = true
 				elevio.SetButtonLamp(a.Button, a.Floor, true)
 				//fmt.Println("orders in queue: \n", sentmsg.ElevList.Requests)
 				fsm.OnRequestButtonPress(a.Floor, a.Button, pos, activeElevs) //får den til å kjøre
-
 			}
+
 
 		case a := <- msgAckR:
 			//fmt.Printf("kommer vi hit ? msgackr\n")
 			if a.Orgsend == pos{
+				CorrectAck = true
 				fmt.Printf("ack\n")
 
 				}
@@ -140,8 +145,7 @@ func main() {
 			}
 			fmt.Printf("OFA\n")
 			sentmsg.ElevList[pos].Floor = a
-			sentmsg.Msgtype = 1
-			msgTrans <- sentmsg
+			//msgTrans <- sentmsg
 
 
 		case p := <-peerUpdateCh:
@@ -152,11 +156,7 @@ func main() {
 				if i == id {
 					pos = teller
 					sentmsg.ListPos = pos
-
-					sentmsg.Msgtype = 1
-					//ackmsg.myid = pos
-					//sentmsg.ListPos = pos //vett egentlig ikkje om elvator structen trenge Position men
-					msgTrans <- sentmsg
+					//msgTrans <- sentmsg
 					fmt.Printf("pos: %d\n", pos)
 				}
 				teller++
@@ -166,33 +166,22 @@ func main() {
 		// 	//msgAckT <- AckMsg{myid, a.sender}
 
 		case a := <-msgRec:
-
-
-
-			// ackmsg.orgsend = a.ListPos
+			ackmsg.Orgsend = a.ListPos
 			// //fmt.Printf("orgsend %d\n", a.ListPos)
-			// ackmsg.receiver = pos
+			ackmsg.Receiver = pos
 			// //fmt.Printf("receiver %d\n", pos)
-			// msgAckT <- ackmsg
-			if a.Msgtype == 3 {
+			msgAckT <- ackmsg
 
-				fsm.PosUpdate(a.ListPos)
-				fmt.Printf("listpos, %d\n", a.ListPos)
-			}
-
-			if a.Msgtype == 2 {
-
-				fsm.NewFloor(a.ElevList[a.ListPos], a.ListPos)
-
-			}
-
-			if a.Msgtype == 1 && a.ButtonPushed[0] != -10{
+			if a.ButtonPushed[0] != -10{
+				fmt.Printf("bp av 0, %d\n", a.ButtonPushed)
 				//sentmsg.ElevList[pos].AcceptedOrders[a.ButtonPushed[0]][a.ButtonPushed[1]] = 1
 				a.ElevList[pos].AcceptedOrders[a.ButtonPushed[0]][a.ButtonPushed[1]] = 1
+			}
+
 				fsm.RecievedMSG(a.ButtonPushed[0], a.ButtonPushed[1], a.ListPos, a.ElevList[a.ListPos], activeElevs)
 				sentmsg.ButtonPushed[0] = -10 // same as init value so we dont keep sending the same buttonpress forever
 				// trengs egentlig bare når vi sender melidnger på heartbeat, ikke knappetrykk
-			}
+
 		case a := <-drv_obstr:
 			fmt.Printf("%+v\n", a)
 			if a {
