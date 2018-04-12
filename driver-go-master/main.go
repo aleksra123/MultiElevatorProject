@@ -110,17 +110,6 @@ func main() {
 				// 			fmt.Printf("WE HAVE ACKED!\n")
 				// 			correctAck = false
 				// 			break
-				//
-				// 		}
-				//
-				//
-				// 	}
-				// if a.Floor != sentmsg.ElevList[pos].Floor {
-				// 	 sentmsg.ElevList[pos].AcceptedOrders[a.Floor][int(a.Button)] = 1
-				// 	 msgTrans <- sentmsg
-				// }
-
-
 
 			} else { // cab trykk, oppdaterer Requests med en gang og setter lys
 				sentmsg.ElevList[pos].Requests[a.Floor][a.Button] = true
@@ -151,7 +140,7 @@ func main() {
 			}
 			fmt.Printf("OFA\n")
 			sentmsg.ElevList[pos].Floor = a
-			sentmsg.Msgtype = 2
+			sentmsg.Msgtype = 1
 			msgTrans <- sentmsg
 
 
@@ -163,6 +152,8 @@ func main() {
 				if i == id {
 					pos = teller
 					sentmsg.ListPos = pos
+
+					sentmsg.Msgtype = 1
 					//ackmsg.myid = pos
 					//sentmsg.ListPos = pos //vett egentlig ikkje om elvator structen trenge Position men
 					msgTrans <- sentmsg
@@ -176,17 +167,27 @@ func main() {
 
 		case a := <-msgRec:
 
+
+
 			// ackmsg.orgsend = a.ListPos
 			// //fmt.Printf("orgsend %d\n", a.ListPos)
 			// ackmsg.receiver = pos
 			// //fmt.Printf("receiver %d\n", pos)
 			// msgAckT <- ackmsg
-			if a.Msgtype == 2 {
+			if a.Msgtype == 3 {
 
-				fsm.NewFloor(a.ElevList[pos].Floor, a.ListPos)
+				fsm.PosUpdate(a.ListPos)
+				fmt.Printf("listpos, %d\n", a.ListPos)
 			}
 
-			if a.Msgtype == 1 {
+			if a.Msgtype == 2 {
+
+				fsm.NewFloor(a.ElevList[a.ListPos], a.ListPos)
+
+			}
+
+			if a.Msgtype == 1 && a.ButtonPushed[0] != -10{
+				//sentmsg.ElevList[pos].AcceptedOrders[a.ButtonPushed[0]][a.ButtonPushed[1]] = 1
 				a.ElevList[pos].AcceptedOrders[a.ButtonPushed[0]][a.ButtonPushed[1]] = 1
 				fsm.RecievedMSG(a.ButtonPushed[0], a.ButtonPushed[1], a.ListPos, a.ElevList[a.ListPos], activeElevs)
 				sentmsg.ButtonPushed[0] = -10 // same as init value so we dont keep sending the same buttonpress forever
