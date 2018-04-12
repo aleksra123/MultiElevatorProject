@@ -7,7 +7,7 @@ import (
 func Check_above(e Elevator) bool {
 	for floor := e.Floor + 1; floor < NumFloors; floor++ {
 		for button := 0; button < NumButtons; button++ {
-			if e.Requests[floor][button] { // ==true --> order
+			if e.Requests[floor][button] {
 				return true
 			}
 		}
@@ -36,7 +36,7 @@ func ChooseDirection(e Elevator) MotorDirection {
 		} else {
 			return MD_Stop
 		}
-	case MD_Down: //Compared to C-code. Is this redundant?
+	case MD_Down: 
 		if Check_below(e) {
 			return MD_Down
 		} else if Check_above(e) {
@@ -71,12 +71,9 @@ func ShouldStop(e Elevator) bool {
 }
 
 func ClearAtCurrentFloor(e Elevator) Elevator {
+	//Clears both directions
 	for button := 0; button < NumButtons; button++ {
 		e.Requests[e.Floor][button] = false
-	} //Clears both directions
-	// for btn := 0; btn < NumButtons-1; btn++ {
-	// 	e.AcceptedOrders[e.Floor][btn] = 0
-
-	//} //Clears both directions
-	return e //Why does it return an elevator-type?
+	} 
+	return e 
 }
