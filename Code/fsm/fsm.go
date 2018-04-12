@@ -14,18 +14,14 @@ const (
 	NumElevators = 3
 )
 
-//Might have to change package location later.
-
 var Elev elevio.Elevator
-
-//var outputDevice ElevOutputDevice ??
 
 var Door_timer = time.NewTimer(3 * time.Second)
 
-func setAllLights(es elevio.Elevator) {
+func setAllLights(e elevio.Elevator) {
 	for floor := 0; floor < NumFloors; floor++ {
 		for btn := 0; btn < NumButtons; btn++ {
-			if Elev.Requests[floor][btn] == true {
+			if e.Requests[floor][btn] == true {
 				elevio.SetButtonLamp(elevio.ButtonType(btn), floor, true)
 			} else {
 				elevio.SetButtonLamp(elevio.ButtonType(btn), floor, false)
@@ -37,12 +33,10 @@ func setAllLights(es elevio.Elevator) {
 func OnInitBetweenFloors() {
 	elevio.SetMotorDirection(elevio.MD_Down)
 	Elev.Dir = elevio.MD_Down
-	Elev.State = elevio.Moving
+	Elev.State = elevio.Undefined
 }
 
 func OnRequestButtonPress(btn_floor int, btn_type elevio.ButtonType) {
-	//fmt.Println(btn_floor, elevio_button_toString(btn_type)) //Mangler to første argumenter
-	//Elev_print(Elev)
 	switch Elev.State {
 	case elevio.DoorOpen:
 		if Elev.Floor == btn_floor {
@@ -68,14 +62,11 @@ func OnRequestButtonPress(btn_floor int, btn_type elevio.ButtonType) {
 		}
 
 	}
-	setAllLights(Elev) //
-	//fmt.Println("\nNew state:\n")
-	//Elev_print(Elev)
+	setAllLights(Elev)
 }
 
 func OnFloorArrival(newFloor int) {
-	fmt.Println(newFloor) //Er noe rart her også
-	//Elev_print(Elev)
+	fmt.Println("Floor:",newFloor)
 	Elev.Floor = newFloor
 	elevio.SetFloorIndicator(Elev.Floor)
 	switch Elev.State {
@@ -88,9 +79,10 @@ func OnFloorArrival(newFloor int) {
 			setAllLights(Elev)
 			Elev.State = elevio.DoorOpen
 		}
+	case elevio.Undefined:
+		 elevio.SetMotorDirection(elevio.MD_Stop)
+		 Elev.State = elevio.Idle
 	}
-	//fmt.Println("\nNew state:\n")
-	//Elev_print(Elev)
 }
 
 func OnDoorTimeout() {
@@ -104,5 +96,18 @@ func OnDoorTimeout() {
 		} else {
 			Elev.State = elevio.Moving
 		}
+	}
+}
+
+func StateToString(elev elevio.Elevator) string{
+	switch elev.State {
+	case elevio.Idle:
+		return "Idle"
+	case elevio.Moving:
+		return "Moving"
+	case elevio.DoorOpen:
+		return "Door open"
+	default:
+		return "Invalid state"
 	}
 }

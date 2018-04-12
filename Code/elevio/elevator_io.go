@@ -5,8 +5,6 @@ import "sync"
 import "net"
 import "fmt"
 
-//Should constants be a separate file?
-//Not to interfer with io. Like states, Ack.
 
 const _pollRate = 20 * time.Millisecond
 
@@ -40,18 +38,7 @@ const (
 type ButtonEvent struct {
 	Floor  int
 	Button ButtonType
-	//DesignatedElevator int
-	//Done               bool
-	// 			^are these variables necessary?
 }
-
-type Ack int
-
-const (
-	Finished Ack = iota //0
-	NotAcked            //1
-	Acked               //2
-)
 
 type ElevatorState int
 
@@ -67,17 +54,6 @@ type Elevator struct {
 	Dir      MotorDirection
 	Floor    int
 	Requests [NumFloors][NumButtons]bool
-}
-
-type AckList struct {
-	DesignatedElevator int
-	ImplicitAcks       [NumElevators]Ack
-}
-
-type Message struct {
-	Elevator         [NumElevators]Elevator
-	RegisteredOrders [NumFloors][NumButtons - 1]AckList
-	ID               int
 }
 
 func Init(addr string) {
@@ -96,7 +72,6 @@ func Init(addr string) {
 }
 
 func SetMotorDirection(dir MotorDirection) {
-	//fmt.Println("setting motordir", dir)
 	_mtx.Lock()
 	defer _mtx.Unlock()
 	_conn.Write([]byte{1, byte(dir), 0, 0})
