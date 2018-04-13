@@ -29,8 +29,8 @@ func UpdateAllElevs(floor int, pos int){
 func RecievedMSG(floor int, button int, position int, e elevio.Elevator, activeE int) {
 	var index int
 
-	CurrElev[position].Floor = e.Floor
-	CurrElev[position].Position = position
+	//CurrElev[position].Floor = e.Floor
+	//CurrElev[position].Position = position
 	//CurrElev[e.Position].Position = e.Position
 
 	 // fmt.Printf("pos til heis 0: %d\n", CurrElev[0].Position)
@@ -70,11 +70,23 @@ func RecievedMSG(floor int, button int, position int, e elevio.Elevator, activeE
  // prev.Button = elevio.ButtonType(button)
 }
 
-// func NewFloor(e elevio.Elevator, pos int){
-//
-// 	CurrElev[pos].Floor = e.Floor
-// 	//fmt.Printf("possss, %d\n", pos)
-// }
+func NewFloor(e elevio.Elevator, pos int){
+
+	CurrElev[pos].Floor = e.Floor
+
+
+	//fmt.Printf("possss, %d\n", pos)
+}
+
+func ArrivedAtOrderedFloor(e elevio.Elevator, pos int, activeElevs int){
+
+	CurrElev[pos].Floor = e.Floor
+	for i := 0; i < activeElevs; i++ {
+		CurrElev[i].AcceptedOrders = e.AcceptedOrders
+	}
+	fmt.Printf("floor til heis 0: %d\n", CurrElev[0].Floor)
+	fmt.Printf("floor til heis 1: %d\n", CurrElev[1].Floor)
+}
 //
 // func PosUpdate( pos int) {
 //
@@ -117,7 +129,7 @@ func OnRequestButtonPress(btn_floor int, btn_type elevio.ButtonType, pos int, ac
 
 
 	 // fmt.Printf("Floor til heis 0: %d\n", CurrElev[0].Floor)
-	  fmt.Printf("AccOrders: %+v\n", CurrElev[0].AcceptedOrders)
+	 // fmt.Printf("AccOrders: %+v\n", CurrElev[0].AcceptedOrders)
 	 // fmt.Printf("AccOrders: %+v\n", CurrElev[1].AcceptedOrders)
 
 

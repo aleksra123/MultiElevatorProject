@@ -10,12 +10,16 @@ import (
 	"../Network-go-master/network/peers"
 	"./elevio"
 	"./fsm"
-	//"./requests"
+	"./requests"
 )
 
 
 
 func main() {
+	for i := 0; i < 20; i++ {
+		fmt.Printf("\n")
+	}
+
 
 	// Lettest å kjøre test.sh for å komme i gang, men gjerne koble ut den ene heisen ettersom koden
 	// foreløpig bare funker med en. hehe
@@ -102,7 +106,7 @@ func main() {
 				sentmsg.ButtonPushed[0] = a.Floor
 				sentmsg.ButtonPushed[1] = int(a.Button)
 				//sentmsg.Msgtype = 1
-
+				sentmsg.Msgtype = 0
 				//msgTrans <- sentmsg
 				for i := 0; i < 3; i++ {
 						msgTrans <- sentmsg
@@ -135,16 +139,18 @@ func main() {
 		case a := <-drv_floors: // til info så kjøres denne bare en gang når man kommer til en etasje, ikke loop
 
 			fsm.OnFloorArrival(a, pos, activeElevs)
+			sentmsg.Msgtype = 1
 			//sentmsg.ElevList[pos].State = fsm.GetState(pos)
-			// if requests.ShouldStop(sentmsg.ElevList[pos]){
-			// 	//fmt.Printf("er dette lov? \n")
-			//
-			// 	sentmsg.ElevList[pos].AcceptedOrders[a][0] = 0
-			// 	sentmsg.ElevList[pos].AcceptedOrders[a][1] = 0
-			//
-			// }
+			if requests.ShouldStop(sentmsg.ElevList[pos]){
+				//fmt.Printf("er dette lov? \n")
+
+				sentmsg.ElevList[pos].AcceptedOrders[a][0] = 0
+				sentmsg.ElevList[pos].AcceptedOrders[a][1] = 0
+				sentmsg.Msgtype = 2
+			}
 			// fmt.Printf("OFA\n")
 			 sentmsg.ElevList[pos].Floor = a
+
 			 msgTrans <- sentmsg
 
 
@@ -156,6 +162,7 @@ func main() {
 				if i == id {
 					pos = teller
 					sentmsg.ListPos = pos
+					sentmsg.Msgtype = 0
 					msgTrans <- sentmsg
 					fmt.Printf("pos: %d\n", pos)
 				}
@@ -172,17 +179,26 @@ func main() {
 			// //fmt.Printf("receiver %d\n", pos)
 			msgAckT <- ackmsg
 
-			if a.ButtonPushed[0] != -10{
-				fmt.Printf("bp av 0, %d\n", a.ButtonPushed)
-				sentmsg.ElevList[pos].AcceptedOrders[a.ButtonPushed[0]][a.ButtonPushed[1]] = 1
-				a.ElevList[a.ListPos].AcceptedOrders[a.ButtonPushed[0]][a.ButtonPushed[1]] = 1
-				fmt.Printf("AO: %+v\n", a.ElevList[a.ListPos].AcceptedOrders)
+			if a.Msgtype == 1 {
+				fsm.NewFloor(a.ElevList[a.ListPos], a.ListPos)
 			}
+
+			if a.Msgtype == 2 {
+				fsm.ArrivedAtOrderedFloor(a.ElevList[a.ListPos], a.ListPos, activeElevs)
+			}
+			if a.Msgtype != 1 && a.Msgtype != 2{
+
+				if a.ButtonPushed[0] != -10 {
+					fmt.Printf("bp av 0, %d\n", a.ButtonPushed)
+					sentmsg.ElevList[pos].AcceptedOrders[a.ButtonPushed[0]][a.ButtonPushed[1]] = 1
+					a.ElevList[a.ListPos].AcceptedOrders[a.ButtonPushed[0]][a.ButtonPushed[1]] = 1
+					//fmt.Printf("AO: %+v\n", a.ElevList[a.ListPos].AcceptedOrders)
+				}
 
 				fsm.RecievedMSG(a.ButtonPushed[0], a.ButtonPushed[1], a.ListPos, a.ElevList[a.ListPos], activeElevs)
 
 				sentmsg.ButtonPushed[0] = -10 // same as init value so we dont keep sending the same buttonpress forever
-				// trengs egentlig bare når vi sender melidnger på heartbeat, ikke knappetrykk
+			}
 
 		case a := <-drv_obstr:
 			fmt.Printf("%+v\n", a)
