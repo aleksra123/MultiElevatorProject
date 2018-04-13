@@ -10,7 +10,7 @@ import (
 	"../Network-go-master/network/peers"
 	"./elevio"
 	"./fsm"
-	"./requests"
+	//"./requests"
 )
 
 
@@ -98,7 +98,7 @@ func main() {
 
 			if a.Button != 2 { //hvis det ikke er cab, så sender vi det
 
-
+				fmt.Printf("pls no\n")
 				sentmsg.ButtonPushed[0] = a.Floor
 				sentmsg.ButtonPushed[1] = int(a.Button)
 				//sentmsg.Msgtype = 1
@@ -136,16 +136,16 @@ func main() {
 
 			fsm.OnFloorArrival(a, pos, activeElevs)
 			//sentmsg.ElevList[pos].State = fsm.GetState(pos)
-			if requests.ShouldStop(sentmsg.ElevList[pos]){
-				//fmt.Printf("er dette lov? \n")
-
-				sentmsg.ElevList[pos].AcceptedOrders[a][0] = 0
-				sentmsg.ElevList[pos].AcceptedOrders[a][1] = 0
-
-			}
-			fmt.Printf("OFA\n")
-			sentmsg.ElevList[pos].Floor = a
-			msgTrans <- sentmsg
+			// if requests.ShouldStop(sentmsg.ElevList[pos]){
+			// 	//fmt.Printf("er dette lov? \n")
+			//
+			// 	sentmsg.ElevList[pos].AcceptedOrders[a][0] = 0
+			// 	sentmsg.ElevList[pos].AcceptedOrders[a][1] = 0
+			//
+			// }
+			// fmt.Printf("OFA\n")
+			 sentmsg.ElevList[pos].Floor = a
+			 msgTrans <- sentmsg
 
 
 		case p := <-peerUpdateCh:
@@ -178,7 +178,9 @@ func main() {
 				a.ElevList[pos].AcceptedOrders[a.ButtonPushed[0]][a.ButtonPushed[1]] = 1
 			}
 
-				fsm.RecievedMSG(a.ButtonPushed[0], a.ButtonPushed[1], pos, a.ElevList[pos], activeElevs)
+				fsm.RecievedMSG(a.ButtonPushed[0], a.ButtonPushed[1], a.ListPos, a.ElevList[a.ListPos], activeElevs)
+				fmt.Printf("lispos, %d\n", a.ListPos)
+				fmt.Printf("pos, %d\n", pos)
 				sentmsg.ButtonPushed[0] = -10 // same as init value so we dont keep sending the same buttonpress forever
 				// trengs egentlig bare når vi sender melidnger på heartbeat, ikke knappetrykk
 
