@@ -19,12 +19,7 @@ var CurrElev = [elevio.NumElevators]elevio.Elevator{} //liste med elevs som main
 
 var firstTime bool = false //trengte dette + litt i OnFloorArrival for å intialisere når vi har flere heiser
 
-func UpdateAllElevs(floor int, pos int){
 
-	//CurrElev[pos].Floor = floor
-	//fmt.Printf("come at me bro pls\n")
-}
-//var prev elevio.ButtonEvent
 
 func RecievedMSG(floor int, button int, position int, e elevio.Elevator, activeE int) {
 	var index int
@@ -74,7 +69,8 @@ func NewFloor(e elevio.Elevator, pos int){
 
 	CurrElev[pos].Floor = e.Floor
 
-
+	// fmt.Printf("floor til heis 0: %d\n", CurrElev[0].Floor)
+	// fmt.Printf("floor til heis 1: %d\n", CurrElev[1].Floor)
 	//fmt.Printf("possss, %d\n", pos)
 }
 
@@ -82,10 +78,14 @@ func ArrivedAtOrderedFloor(e elevio.Elevator, pos int, activeElevs int){
 
 	CurrElev[pos].Floor = e.Floor
 	for i := 0; i < activeElevs; i++ {
-		CurrElev[i].AcceptedOrders = e.AcceptedOrders
+		CurrElev[i].AcceptedOrders[e.Floor][0] = 0
+		CurrElev[i].AcceptedOrders[e.Floor][1] = 0
+		SetAllLights(CurrElev[i])
 	}
 	fmt.Printf("floor til heis 0: %d\n", CurrElev[0].Floor)
 	fmt.Printf("floor til heis 1: %d\n", CurrElev[1].Floor)
+	fmt.Printf("AccOrders: %+v\n", CurrElev[0].AcceptedOrders)
+	fmt.Printf("AccOrders: %+v\n", CurrElev[1].AcceptedOrders)
 }
 //
 // func PosUpdate( pos int) {
@@ -201,15 +201,6 @@ func OnFloorArrival(newFloor int, pos int, activeE int) {
 	elevio.SetFloorIndicator(CurrElev[pos].Floor)
 
 
-
-	 //fmt.Printf("Request: %+v\n", CurrElev[pos].Requests)
-
-
-	 // fmt.Printf("Floor til heis 0: %d\n", CurrElev[0].Floor)
-	 // fmt.Printf("Floor til heis 1: %d\n", CurrElev[1].Floor)
-	// fmt.Printf("State til heis 0: %d\n", CurrElev[0].State)
-	// fmt.Printf("State til heis 1: %d\n", CurrElev[1].State)
-
 	if  newFloor == 3 {
 
 		elevio.SetMotorDirection(elevio.MD_Stop)
@@ -229,6 +220,8 @@ func OnFloorArrival(newFloor int, pos int, activeE int) {
 
 			CurrElev[i].AcceptedOrders = requests.ClearAtCurrentFloor(CurrElev[pos]).AcceptedOrders
 			SetAllLights(CurrElev[i])
+			// CurrElev[i].AcceptedOrders[newFloor][0] = 0
+			// CurrElev[i].AcceptedOrders[newFloor][1] = 0
 
 			}
 
@@ -239,8 +232,8 @@ func OnFloorArrival(newFloor int, pos int, activeE int) {
 			CurrElev[pos].State = elevio.DoorOpen
 		}
 	}
-	  //fmt.Printf("AccOrders i OnFloorArrival: %+v\n", CurrElev[0].AcceptedOrders)
-	 // fmt.Printf("AccOrders i OnFloorArrival: %+v\n", CurrElev[1].AcceptedOrders)
+	 fmt.Printf("AccOrders i OnFloorArrival: %+v\n", CurrElev[0].AcceptedOrders)
+	 fmt.Printf("AccOrders i OnFloorArrival: %+v\n", CurrElev[1].AcceptedOrders)
 	 // fmt.Printf("Requests: %+v\n", CurrElev[0].Requests)
 	 // fmt.Printf("Requests: %+v\n", CurrElev[1].Requests)
 	 // fmt.Printf("pos til heis 0: %d\n", CurrElev[0].Position)

@@ -143,9 +143,10 @@ func main() {
 			//sentmsg.ElevList[pos].State = fsm.GetState(pos)
 			if requests.ShouldStop(sentmsg.ElevList[pos]){
 				//fmt.Printf("er dette lov? \n")
-
-				sentmsg.ElevList[pos].AcceptedOrders[a][0] = 0
-				sentmsg.ElevList[pos].AcceptedOrders[a][1] = 0
+				for i := 0; i < activeElevs; i++ {
+					sentmsg.ElevList[i].AcceptedOrders[a][0] = 0
+					sentmsg.ElevList[i].AcceptedOrders[a][1] = 0
+				}
 				sentmsg.Msgtype = 2
 			}
 			// fmt.Printf("OFA\n")
@@ -181,10 +182,12 @@ func main() {
 
 			if a.Msgtype == 1 {
 				fsm.NewFloor(a.ElevList[a.ListPos], a.ListPos)
+				//fsm.OnFloorArrival(a.ElevList[a.ListPos].Floor, pos, activeElevs)
 			}
 
 			if a.Msgtype == 2 {
 				fsm.ArrivedAtOrderedFloor(a.ElevList[a.ListPos], a.ListPos, activeElevs)
+				//fsm.OnFloorArrival(a.ElevList[a.ListPos].Floor, pos, activeElevs)
 			}
 			if a.Msgtype != 1 && a.Msgtype != 2{
 
