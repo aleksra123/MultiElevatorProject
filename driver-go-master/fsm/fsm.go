@@ -33,8 +33,8 @@ func RecievedMSG(floor int, button int, position int, e elevio.Elevator, activeE
 	CurrElev[position].Position = position
 	//CurrElev[e.Position].Position = e.Position
 
-	 fmt.Printf("pos til heis 0: %d\n", CurrElev[0].Position)
-	 fmt.Printf("pos til heis 1: %d\n", CurrElev[1].Position)
+	 // fmt.Printf("pos til heis 0: %d\n", CurrElev[0].Position)
+	 // fmt.Printf("pos til heis 1: %d\n", CurrElev[1].Position)
 	if floor != -10   {
 
 
@@ -117,8 +117,10 @@ func OnRequestButtonPress(btn_floor int, btn_type elevio.ButtonType, pos int, ac
 
 
 	 // fmt.Printf("Floor til heis 0: %d\n", CurrElev[0].Floor)
-	 // fmt.Printf("AccOrders: %+v\n", CurrElev[0].AcceptedOrders)
+	  fmt.Printf("AccOrders: %+v\n", CurrElev[0].AcceptedOrders)
 	 // fmt.Printf("AccOrders: %+v\n", CurrElev[1].AcceptedOrders)
+
+
 
 	switch CurrElev[pos].State {
 
@@ -126,7 +128,7 @@ func OnRequestButtonPress(btn_floor int, btn_type elevio.ButtonType, pos int, ac
 
 		if CurrElev[pos].Floor == btn_floor {
 			for i := 0; i < activeE; i++ {
-			CurrElev[i] = requests.ClearAtCurrentFloor(CurrElev[pos])
+			CurrElev[i].AcceptedOrders = requests.ClearAtCurrentFloor(CurrElev[pos]).AcceptedOrders
 			SetAllLights(CurrElev[i])
 			}
 			//CurrElev[pos] = requests.ClearRequests(CurrElev[pos])
@@ -158,7 +160,7 @@ func OnRequestButtonPress(btn_floor int, btn_type elevio.ButtonType, pos int, ac
 			Door_timer.Reset(3 * time.Second)
 
 		} else {
-			fmt.Printf("idle else\n")
+
 			CurrElev[pos].Requests[btn_floor][btn_type] = true
 			CurrElev[pos].Dir = requests.ChooseDirection(CurrElev[pos])
 
@@ -191,8 +193,8 @@ func OnFloorArrival(newFloor int, pos int, activeE int) {
 	 //fmt.Printf("Request: %+v\n", CurrElev[pos].Requests)
 
 
-	 fmt.Printf("Floor til heis 0: %d\n", CurrElev[0].Floor)
-	 fmt.Printf("Floor til heis 1: %d\n", CurrElev[1].Floor)
+	 // fmt.Printf("Floor til heis 0: %d\n", CurrElev[0].Floor)
+	 // fmt.Printf("Floor til heis 1: %d\n", CurrElev[1].Floor)
 	// fmt.Printf("State til heis 0: %d\n", CurrElev[0].State)
 	// fmt.Printf("State til heis 1: %d\n", CurrElev[1].State)
 

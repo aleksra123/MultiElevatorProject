@@ -174,13 +174,13 @@ func main() {
 
 			if a.ButtonPushed[0] != -10{
 				fmt.Printf("bp av 0, %d\n", a.ButtonPushed)
-				//sentmsg.ElevList[pos].AcceptedOrders[a.ButtonPushed[0]][a.ButtonPushed[1]] = 1
+				sentmsg.ElevList[pos].AcceptedOrders[a.ButtonPushed[0]][a.ButtonPushed[1]] = 1
 				a.ElevList[a.ListPos].AcceptedOrders[a.ButtonPushed[0]][a.ButtonPushed[1]] = 1
+				fmt.Printf("AO: %+v\n", a.ElevList[a.ListPos].AcceptedOrders)
 			}
 
 				fsm.RecievedMSG(a.ButtonPushed[0], a.ButtonPushed[1], a.ListPos, a.ElevList[a.ListPos], activeElevs)
-				fmt.Printf("lispos, %d\n", a.ListPos)
-				fmt.Printf("pos, %d\n", pos)
+
 				sentmsg.ButtonPushed[0] = -10 // same as init value so we dont keep sending the same buttonpress forever
 				// trengs egentlig bare når vi sender melidnger på heartbeat, ikke knappetrykk
 
