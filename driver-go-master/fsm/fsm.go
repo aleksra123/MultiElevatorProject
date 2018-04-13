@@ -115,7 +115,8 @@ func OnRequestButtonPress(btn_floor int, btn_type elevio.ButtonType, pos int, ac
 
 func OnFloorArrival(newFloor int, pos int, activeE int, mypos int) {
 	//fmt.Println(newFloor)
-
+	// fmt.Printf("Requests: %+v\n", CurrElev[0].Requests)
+	// fmt.Printf("Requests: %+v\n", CurrElev[1].Requests)
 	if firstTime {
 		Elev.State = elevio.Idle
 		elevio.SetMotorDirection(elevio.MD_Stop)
@@ -123,7 +124,7 @@ func OnFloorArrival(newFloor int, pos int, activeE int, mypos int) {
 	}
 
 	CurrElev[pos].Floor = newFloor
-	fmt.Printf("pos, %d\n", pos )
+
 	fmt.Printf("Floor til heis 0: %d\n", CurrElev[0].Floor)
 	fmt.Printf("Floor til heis 1: %d\n", CurrElev[1].Floor)
 
@@ -136,14 +137,20 @@ func OnFloorArrival(newFloor int, pos int, activeE int, mypos int) {
 		elevio.SetMotorDirection(elevio.MD_Stop)
 	}
 
-	switch CurrElev[pos].State {
-	case elevio.Moving:
+	// switch CurrElev[pos].State {
+	// case elevio.Moving:
 		//fmt.Printf("OFA, case moving\n")
+		fmt.Printf("Requests: %+v\n", CurrElev[0].Requests)
+		fmt.Printf("Requests: %+v\n", CurrElev[1].Requests)
 
 		if requests.ShouldStop(CurrElev[pos]) {
 			fmt.Printf("ser begge heiser dette?\n")
-			elevio.SetMotorDirection(elevio.MD_Stop)
-			elevio.SetDoorOpenLamp(true)
+			// fmt.Printf("pos, %d\n", mypos)
+			if pos == mypos {
+
+				elevio.SetMotorDirection(elevio.MD_Stop)
+				elevio.SetDoorOpenLamp(true)
+		 }
 			for i := 0; i < activeE; i++ {
 				CurrElev[i].AcceptedOrders = requests.ClearAtCurrentFloor(CurrElev[pos]).AcceptedOrders
 			  SetAllLights(CurrElev[i])
@@ -155,7 +162,7 @@ func OnFloorArrival(newFloor int, pos int, activeE int, mypos int) {
 
 			CurrElev[pos].State = elevio.DoorOpen
 		}
-	}
+	//}
 	  // fmt.Printf("AccOrders i OnFloorArrival: %+v\n", CurrElev[0].AcceptedOrders)
 	  // fmt.Printf("AccOrders i OnFloorArrival: %+v\n", CurrElev[1].AcceptedOrders)
 	 // fmt.Printf("Requests: %+v\n", CurrElev[0].Requests)
