@@ -1,0 +1,55 @@
+
+/*
+
+
+
+import "sync"
+import (
+	"network"
+	"network/localip"
+	"fmt"
+	"os"
+	"database/sql/driver"
+	"time"
+)
+
+func main(){
+
+	portAddr := 15647
+
+	// Use the local IP address + process ID as elevator ID
+	if id == "" {
+		localIP, err := localip.LocalIP()
+		if err != nil {
+			fmt.Println(err)
+			localIP = "DISCONNECTED"
+		}
+		id = fmt.Sprintf("peer-%s-%d", localIP, os.Getpid())
+	}
+
+
+
+
+	go network.main(...)
+	go sync.main(...)
+	go driver.main(...)
+	//  go safeKill()
+
+	for {
+		select{
+		case <- time.After(5*time.Second)
+		}
+	}
+}
+
+*/
+
+// Example of implementation of safekill (from throste)
+
+//func safeKill() {
+//	var  = make(chan os.Signal)
+//	signal.Notify(c, os.Interrupt)
+//	<-c
+//	driver.SetMotorDir(def.DirStop)
+//	log.Fatal("User terminated program.")
+//}
