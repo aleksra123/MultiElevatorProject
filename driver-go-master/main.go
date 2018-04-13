@@ -10,12 +10,13 @@ import (
 	"../Network-go-master/network/peers"
 	"./elevio"
 	"./fsm"
-	"./requests"
+	//"./requests"
 )
 
 
 
 func main() {
+
 	for i := 0; i < 20; i++ {
 		fmt.Printf("\n")
 	}
@@ -100,13 +101,12 @@ func main() {
 		select {
 		case a := <-drv_buttons:
 
-			if a.Button != 2 { //hvis det ikke er cab, så sender vi det
+			if a.Button != 2 {
 
-				fmt.Printf("pls no\n")
 				sentmsg.ButtonPushed[0] = a.Floor
 				sentmsg.ButtonPushed[1] = int(a.Button)
 				//sentmsg.Msgtype = 1
-				sentmsg.Msgtype = 0
+				sentmsg.Msgtype = 3
 				//msgTrans <- sentmsg
 				for i := 0; i < 3; i++ {
 						msgTrans <- sentmsg
@@ -119,40 +119,21 @@ func main() {
 					}
 				}
 
-			} else { // cab trykk, oppdaterer Requests med en gang og setter lys
+			} else {
 				sentmsg.ElevList[pos].Requests[a.Floor][a.Button] = true
 				elevio.SetButtonLamp(a.Button, a.Floor, true)
-				//fmt.Println("orders in queue: \n", sentmsg.ElevList.Requests)
-				fsm.OnRequestButtonPress(a.Floor, a.Button, pos, activeElevs) //får den til å kjøre
+				fsm.OnRequestButtonPress(a.Floor, a.Button, pos, activeElevs)
 			}
-
 
 		case a := <- msgAckR:
-			//fmt.Printf("kommer vi hit ? msgackr\n")
 			if a.Orgsend == pos{
 				CorrectAck = true
-				fmt.Printf("ack\n")
-
 				}
-
 
 		case a := <-drv_floors: // til info så kjøres denne bare en gang når man kommer til en etasje, ikke loop
-
-			fsm.OnFloorArrival(a, pos, activeElevs)
-			sentmsg.Msgtype = 1
-			//sentmsg.ElevList[pos].State = fsm.GetState(pos)
-			if requests.ShouldStop(sentmsg.ElevList[pos]){
-				//fmt.Printf("er dette lov? \n")
-				for i := 0; i < activeElevs; i++ {
-					sentmsg.ElevList[i].AcceptedOrders[a][0] = 0
-					sentmsg.ElevList[i].AcceptedOrders[a][1] = 0
-				}
-				sentmsg.Msgtype = 2
-			}
-			// fmt.Printf("OFA\n")
-			 sentmsg.ElevList[pos].Floor = a
-
-			 msgTrans <- sentmsg
+			sentmsg.Msgtype = 2
+			sentmsg.ElevList[pos].Floor = a
+			msgTrans <- sentmsg
 
 
 		case p := <-peerUpdateCh:
@@ -163,7 +144,8 @@ func main() {
 				if i == id {
 					pos = teller
 					sentmsg.ListPos = pos
-					sentmsg.Msgtype = 0
+					sentmsg.ElevList[pos].Position = pos
+					sentmsg.Msgtype = 3
 					msgTrans <- sentmsg
 					fmt.Printf("pos: %d\n", pos)
 				}
@@ -171,35 +153,31 @@ func main() {
 			}
 			teller = 0
 
-		// 	//msgAckT <- AckMsg{myid, a.sender}
 
 		case a := <-msgRec:
 			ackmsg.Orgsend = a.ListPos
-			// //fmt.Printf("orgsend %d\n", a.ListPos)
 			ackmsg.Receiver = pos
-			// //fmt.Printf("receiver %d\n", pos)
 			msgAckT <- ackmsg
 
-			if a.Msgtype == 1 {
-				fsm.NewFloor(a.ElevList[a.ListPos], a.ListPos)
-				//fsm.OnFloorArrival(a.ElevList[a.ListPos].Floor, pos, activeElevs)
-			}
 
 			if a.Msgtype == 2 {
-				fsm.ArrivedAtOrderedFloor(a.ElevList[a.ListPos], a.ListPos, activeElevs)
-				//fsm.OnFloorArrival(a.ElevList[a.ListPos].Floor, pos, activeElevs)
+				fsm.OnFloorArrival(a.ElevList[a.ListPos].Floor, a.ListPos, activeElevs, pos)
 			}
-			if a.Msgtype != 1 && a.Msgtype != 2{
 
+
+			if a.Msgtype == 3{
 				if a.ButtonPushed[0] != -10 {
 					fmt.Printf("bp av 0, %d\n", a.ButtonPushed)
-					sentmsg.ElevList[pos].AcceptedOrders[a.ButtonPushed[0]][a.ButtonPushed[1]] = 1
-					a.ElevList[a.ListPos].AcceptedOrders[a.ButtonPushed[0]][a.ButtonPushed[1]] = 1
+					for i := 0; i < activeElevs; i++ {
+						sentmsg.ElevList[i].AcceptedOrders[a.ButtonPushed[0]][a.ButtonPushed[1]] = 1
+						a.ElevList[i].AcceptedOrders[a.ButtonPushed[0]][a.ButtonPushed[1]] = 1
+					}
+
+
 					//fmt.Printf("AO: %+v\n", a.ElevList[a.ListPos].AcceptedOrders)
 				}
 
 				fsm.RecievedMSG(a.ButtonPushed[0], a.ButtonPushed[1], a.ListPos, a.ElevList[a.ListPos], activeElevs)
-
 				sentmsg.ButtonPushed[0] = -10 // same as init value so we dont keep sending the same buttonpress forever
 			}
 
