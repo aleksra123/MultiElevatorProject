@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	"../costfunction"
+	//"../costfunction"
 	"../elevio"
 	"../requests"
 )
@@ -42,14 +42,18 @@ func RecievedMSG(floor int, button int, position int, e elevio.Elevator, activeE
 						CurrElev[i].AcceptedOrders[floor][button] = e.AcceptedOrders[floor][button]
 					}
 
-					//fmt.Printf("AO: %+v\n", e.AcceptedOrders)
-					if CurrElev[position].AcceptedOrders[floor][button] == 1 { //floor != e.Floor && () !(floor == e.Floor && e.State == elevio.Idle) &&
-						index = costfunction.CostCalc(CurrElev, activeE)
-						fmt.Printf("index: %d\n", index)
-						CurrElev[index].Requests[floor][button] = true
-						// fmt.Printf("Request: %+v\n", CurrElev[index].Requests)
-						SetAllLights(CurrElev[index])
-					 } //else if e.State == elevio.Idle{
+					fmt.Printf("AO: %+v\n", e.AcceptedOrders)
+					// if CurrElev[position].AcceptedOrders[floor][button] == 1 { //floor != e.Floor && () !(floor == e.Floor && e.State == elevio.Idle) &&
+					// 	index = costfunction.CostCalc(CurrElev, activeE)
+					// 	fmt.Printf("index: %d\n", index)
+					// 	CurrElev[index].Requests[floor][button] = true
+					// 	// fmt.Printf("Request: %+v\n", CurrElev[index].Requests)
+					// 	SetAllLights(CurrElev[index])
+					//  }
+					 index = 0
+					 CurrElev[index].Requests[floor][button] = true
+					 SetAllLights(CurrElev[index])
+					 //else if e.State == elevio.Idle{
 					// 	elevio.SetDoorOpenLamp(true)
 					// 	CurrElev[position].State = elevio.DoorOpen
 					// 	Door_timer.Reset(3 * time.Second)
