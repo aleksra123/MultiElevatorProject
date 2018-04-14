@@ -186,7 +186,7 @@ func main() {
 			}
 
 			if a.Msgtype == 4 {
-				fsm.OnDoorTimeout(a.ListPos, pos)
+				fsm.OnDoorTimeout(a.ListPos, pos )
 			}
 
 		case a := <-drv_obstr:
@@ -210,6 +210,7 @@ func main() {
 		case <-drv_timeout:
 
 			 sentmsg.ListPos = pos
+			 //sentmsg.ElevList[pos].State = elevio.DoorOpen
 			 sentmsg.Msgtype = 4
 			 msgTrans <- sentmsg
 
