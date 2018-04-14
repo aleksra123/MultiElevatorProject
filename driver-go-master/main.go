@@ -122,7 +122,7 @@ func main() {
 			} else {
 				sentmsg.ElevList[pos].Requests[a.Floor][a.Button] = true
 				elevio.SetButtonLamp(a.Button, a.Floor, true)
-				fsm.OnRequestButtonPress(a.Floor, a.Button, pos, activeElevs)
+				fsm.OnRequestButtonPress(a.Floor, a.Button, pos, activeElevs, pos)
 			}
 
 		case a := <- msgAckR:
@@ -177,8 +177,12 @@ func main() {
 					//fmt.Printf("AO: %+v\n", a.ElevList[a.ListPos].AcceptedOrders)
 				}
 
-				fsm.RecievedMSG(a.ButtonPushed[0], a.ButtonPushed[1], a.ListPos, a.ElevList[a.ListPos], activeElevs)
+				fsm.RecievedMSG(a.ButtonPushed[0], a.ButtonPushed[1], a.ListPos, a.ElevList[a.ListPos], activeElevs, pos)
 				sentmsg.ButtonPushed[0] = -10 // same as init value so we dont keep sending the same buttonpress forever
+			}
+
+			if a.Msgtype == 4 {
+				fsm.OnDoorTimeout(a.ListPos, pos)
 			}
 
 		case a := <-drv_obstr:
@@ -197,7 +201,11 @@ func main() {
 				}
 			}
 		case <-drv_timeout:
-			fsm.OnDoorTimeout(pos)
+			fmt.Printf("blir dette printet hos begge 2?\n")
+			 sentmsg.ListPos = pos
+			 sentmsg.Msgtype = 4
+			 msgTrans <- sentmsg
+
 		}
 	}
 
