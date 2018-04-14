@@ -39,12 +39,17 @@ func main() {
 	drv_obstr := make(chan bool)
 	drv_stop := make(chan bool)
 	drv_timeout := fsm.Door_timer.C
+	drv_powerout := fsm.Power_timer.C
+
+	fsm.Door_timer.Stop()
+	fsm.Power_timer.Stop()
 
 
 	go elevio.PollButtons(drv_buttons)
 	go elevio.PollFloorSensor(drv_floors)
 	go elevio.PollObstructionSwitch(drv_obstr)
 	go elevio.PollStopButton(drv_stop)
+
 
 	select { //Init
 	case <-drv_floors:
@@ -76,6 +81,8 @@ func main() {
 	go peers.Transmitter(15231, string(id), peerTxEnable)
 	go peers.Receiver(15231, peerUpdateCh)
 
+
+
 	msgTrans := make(chan ElevMsg)
 	msgRec := make(chan ElevMsg)
 
@@ -89,7 +96,7 @@ func main() {
 	go bcast.Transmitter(25000, msgTrans, msgAckT )
 	go bcast.Receiver(25000, msgRec, msgAckR)
 
-	var pos int // blir oppdatert (nesten) med en gang heisen kommer online
+	var pos int = -1 // blir oppdatert (nesten) med en gang heisen kommer online
 	var sentmsg = ElevMsg{}
 	sentmsg.ButtonPushed = fsm.BP
 	sentmsg.ElevList = fsm.CurrElev
@@ -100,29 +107,30 @@ func main() {
 	for {
 		select {
 		case a := <-drv_buttons:
+			if pos != -1 {
+				if a.Button != 2 {
 
-			if a.Button != 2 {
+					sentmsg.ButtonPushed[0] = a.Floor
+					sentmsg.ButtonPushed[1] = int(a.Button)
+					//sentmsg.Msgtype = 1
+					sentmsg.Msgtype = 3
+					//msgTrans <- sentmsg
+					for i := 0; i < 3; i++ {
+							msgTrans <- sentmsg
+							time.Sleep(5*time.Millisecond)
 
-				sentmsg.ButtonPushed[0] = a.Floor
-				sentmsg.ButtonPushed[1] = int(a.Button)
-				//sentmsg.Msgtype = 1
-				sentmsg.Msgtype = 3
-				//msgTrans <- sentmsg
-				for i := 0; i < 3; i++ {
-						msgTrans <- sentmsg
-						time.Sleep(5*time.Millisecond)
-
-					if  CorrectAck{
-							fmt.Printf("WE HAVE ACKED!\n")
-							CorrectAck = false
-							break
+						if  CorrectAck{
+								fmt.Printf("WE HAVE ACKED!\n")
+								CorrectAck = false
+								break
+						}
 					}
-				}
 
-			} else {
-				sentmsg.ElevList[pos].Requests[a.Floor][a.Button] = true
-				elevio.SetButtonLamp(a.Button, a.Floor, true)
-				fsm.OnRequestButtonPress(a.Floor, a.Button, pos, activeElevs, pos)
+				} else {
+					sentmsg.ElevList[pos].Requests[a.Floor][a.Button] = true
+					elevio.SetButtonLamp(a.Button, a.Floor, true)
+					fsm.OnRequestButtonPress(a.Floor, a.Button, pos, activeElevs, pos)
+				}
 			}
 
 		case a := <- msgAckR:
@@ -167,7 +175,7 @@ func main() {
 
 			if a.Msgtype == 3{
 				if a.ButtonPushed[0] != -10 {
-					fmt.Printf("bp av 0, %d\n", a.ButtonPushed)
+
 					for i := 0; i < activeElevs; i++ {
 						sentmsg.ElevList[i].AcceptedOrders[a.ButtonPushed[0]][a.ButtonPushed[1]] = 1
 						a.ElevList[i].AcceptedOrders[a.ButtonPushed[0]][a.ButtonPushed[1]] = 1
@@ -189,7 +197,13 @@ func main() {
 			fmt.Printf("%+v\n", a)
 			if a {
 				elevio.SetMotorDirection(elevio.MD_Stop)
-			} //else {
+
+			} else {
+				fsm.Power_timer.Stop()
+				peerTxEnable <- true
+				fsm.OnInitBetweenFloors()
+			}
+			//else {
 			// 	elevio.SetMotorDirection(d)
 			// }
 
@@ -201,10 +215,18 @@ func main() {
 				}
 			}
 		case <-drv_timeout:
-			fmt.Printf("blir dette printet hos begge 2?\n")
+
 			 sentmsg.ListPos = pos
 			 sentmsg.Msgtype = 4
 			 msgTrans <- sentmsg
+
+		case <- drv_powerout:
+			fsm.Powerout(pos)
+			fmt.Printf("drvpowerout \n")
+			peerTxEnable <- false
+			pos = -1
+
+
 
 		}
 	}

@@ -11,6 +11,9 @@ import (
 
 var Elev elevio.Elevator
 var Door_timer = time.NewTimer(3 * time.Second)
+
+var Power_timer = time.NewTimer(5* time.Second)
+
 var AckMat = [elevio.NumElevators][elevio.NumFloors][elevio.NumButtons - 1]int{} //acknowledged orders matrise
 var BP = [2]int{-10, 0}
 var CurrElev = [elevio.NumElevators]elevio.Elevator{} //liste med elevs som main bruker i sentmsg, se main:68
@@ -110,9 +113,16 @@ func OnRequestButtonPress(btn_floor int, btn_type elevio.ButtonType, pos int, ac
 		} else {
 
 			CurrElev[pos].Requests[btn_floor][btn_type] = true
+			fmt.Printf("requests til 0 : %+v\n", CurrElev[pos].Requests)
+			fmt.Printf("MotorDirection rett før choose: %d\n", CurrElev[0].Dir)
 			CurrElev[pos].Dir = requests.ChooseDirection(CurrElev[pos])
+			fmt.Printf("MotorDirection: %d\n", CurrElev[0].Dir)
 			if pos == mypos {
 				elevio.SetMotorDirection(CurrElev[pos].Dir)
+				Power_timer.Reset(5 * time.Second)
+
+
+
 			}
 			CurrElev[pos].State = elevio.Moving
 
@@ -122,67 +132,68 @@ func OnRequestButtonPress(btn_floor int, btn_type elevio.ButtonType, pos int, ac
 }
 
 func OnFloorArrival(newFloor int, pos int, activeE int, mypos int) {
-	//fmt.Println(newFloor)
-	// fmt.Printf("Requests: %+v\n", CurrElev[0].Requests)
-	// fmt.Printf("Requests: %+v\n", CurrElev[1].Requests)
+	fmt.Printf("MotorDirection: %d\n", CurrElev[0].Dir)
 	if firstTime {
-		Elev.State = elevio.Idle
+			fmt.Printf("firsttime?\n")
+		CurrElev[pos].State = elevio.Idle
 		elevio.SetMotorDirection(elevio.MD_Stop)
-		firstTime = false
+		CurrElev[pos].Floor = newFloor
+		elevio.SetFloorIndicator(CurrElev[mypos].Floor)
+		CurrElev[pos].Dir = requests.ChooseDirection(CurrElev[pos])
+			fmt.Printf("MotorDirection sakl være 0: %d\n", CurrElev[0].Dir)
+		if mypos == pos {
+			elevio.SetMotorDirection(CurrElev[mypos].Dir)
+		}
+		if CurrElev[pos].Dir != elevio.MD_Stop{
+			CurrElev[pos].State = elevio.Moving
+		}
 	}
 
-	CurrElev[pos].Floor = newFloor
-
-	// fmt.Printf("Floor til heis 0: %d\n", CurrElev[0].Floor)
-	// fmt.Printf("Floor til heis 1: %d\n", CurrElev[1].Floor)
-
-
-	elevio.SetFloorIndicator(CurrElev[mypos].Floor)
-
-	// if  newFloor == 3 {
-	// 	elevio.SetMotorDirection(elevio.MD_Stop)
-	// } else if  newFloor == 0 {
-	// 	elevio.SetMotorDirection(elevio.MD_Stop)
-	// }
-
-	// switch CurrElev[pos].State {
-	// case elevio.Moving:
-		//fmt.Printf("OFA, case moving\n")
-		// fmt.Printf("Requests: %+v\n", CurrElev[0].Requests)
-		// fmt.Printf("Requests: %+v\n", CurrElev[1].Requests)
-
-		if requests.ShouldStop(CurrElev[pos]) {
-			fmt.Printf("ser begge heiser dette?\n")
-			// fmt.Printf("pos, %d\n", mypos)
-			if pos == mypos {
-				fmt.Printf("pls nooo for elev 0\n")
-				elevio.SetMotorDirection(elevio.MD_Stop)
-				elevio.SetDoorOpenLamp(true)
-				Door_timer.Reset(3 * time.Second)
-		 }
-			for i := 0; i < activeE; i++ {
-				CurrElev[i].AcceptedOrders = requests.ClearAtCurrentFloor(CurrElev[pos]).AcceptedOrders
-			  SetAllLights(CurrElev[i])
-
+			if pos == mypos{
+				Power_timer.Stop()
 			}
-			CurrElev[pos] = requests.ClearRequests(CurrElev[pos])
-			SetAllLights(CurrElev[pos])
+
+			CurrElev[pos].Floor = newFloor
+
+			elevio.SetFloorIndicator(CurrElev[mypos].Floor)
+
+				if requests.ShouldStop(CurrElev[pos]) {
+					fmt.Printf("ser begge heiser dette?\n")
+					// fmt.Printf("pos, %d\n", mypos)
+					if !firstTime{
+							CurrElev[pos].Dir = elevio.MD_Stop
+							CurrElev[pos].Dir = requests.ChooseDirection(CurrElev[pos])
+							CurrElev[pos].State = elevio.DoorOpen
+						if pos == mypos {
+							elevio.SetDoorOpenLamp(true)
+							Door_timer.Reset(3 * time.Second)
+							elevio.SetMotorDirection(elevio.MD_Stop)
+					}
 
 
-			CurrElev[pos].State = elevio.DoorOpen
-			fmt.Printf("bunn av should stop \n")
-			fmt.Printf("MotorDirection: %d\n", CurrElev[0].Dir)
-		}
-	//}
-	  // fmt.Printf("AccOrders i OnFloorArrival: %+v\n", CurrElev[0].AcceptedOrders)
-	  // fmt.Printf("AccOrders i OnFloorArrival: %+v\n", CurrElev[1].AcceptedOrders)
-	 // fmt.Printf("Requests: %+v\n", CurrElev[0].Requests)
-	 // fmt.Printf("Requests: %+v\n", CurrElev[1].Requests)
-	  // fmt.Printf("LOOK HERE    pos til heis 0: %d\n", CurrElev[0].Position)
-	  // fmt.Printf("LOOK HERE    pos til heis 1: %d\n", CurrElev[1].Position)
-	 	// fmt.Printf("Floor til heis 0: %d\n", CurrElev[0].Floor)
- 	 	// fmt.Printf("Floor til heis 1: %d\n", CurrElev[1].Floor)
 
+
+				 }
+					for i := 0; i < activeE; i++ {
+						CurrElev[i].AcceptedOrders = requests.ClearAtCurrentFloor(CurrElev[pos]).AcceptedOrders
+					  SetAllLights(CurrElev[i])
+
+					}
+					CurrElev[pos] = requests.ClearRequests(CurrElev[pos])
+					SetAllLights(CurrElev[pos])
+
+
+
+
+					fmt.Printf("MotorDirection: %d\n", CurrElev[0].Dir)
+				}
+			firstTime = false
+
+}
+
+func Powerout(pos int){
+
+	CurrElev[pos].State = elevio.Undefined
 }
 
 
@@ -190,9 +201,10 @@ func OnFloorArrival(newFloor int, pos int, activeE int, mypos int) {
 func OnDoorTimeout(pos int, mypos int) {
 	switch CurrElev[pos].State {
 	case elevio.DoorOpen:
-		//fmt.Printf("blir dette printet hos begge ODT case door open?\n")
+		fmt.Printf("blir dette printet hos begge ODT case door open?\n")
 		CurrElev[pos].Dir = requests.ChooseDirection(CurrElev[pos])
 		//fmt.Printf("pos o ODT. %d\n", pos)
+		//fmt.Printf("MotorDirection i ODT: %d\n", CurrElev[0].Dir)
 		if pos == mypos{
 			elevio.SetDoorOpenLamp(false)
 			elevio.SetMotorDirection(CurrElev[pos].Dir)
@@ -201,6 +213,10 @@ func OnDoorTimeout(pos int, mypos int) {
 			CurrElev[pos].State = elevio.Idle
 		} else {
 			CurrElev[pos].State = elevio.Moving
+			if pos == mypos {
+				Power_timer.Reset(5 * time.Second)
+
+			}
 		}
 	}
 }
