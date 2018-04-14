@@ -133,17 +133,17 @@ func OnFloorArrival(newFloor int, pos int, activeE int, mypos int) {
 
 	CurrElev[pos].Floor = newFloor
 
-	fmt.Printf("Floor til heis 0: %d\n", CurrElev[0].Floor)
-	fmt.Printf("Floor til heis 1: %d\n", CurrElev[1].Floor)
+	// fmt.Printf("Floor til heis 0: %d\n", CurrElev[0].Floor)
+	// fmt.Printf("Floor til heis 1: %d\n", CurrElev[1].Floor)
 
 
 	elevio.SetFloorIndicator(CurrElev[mypos].Floor)
 
-	if  newFloor == 3 {
-		elevio.SetMotorDirection(elevio.MD_Stop)
-	} else if  newFloor == 0 {
-		elevio.SetMotorDirection(elevio.MD_Stop)
-	}
+	// if  newFloor == 3 {
+	// 	elevio.SetMotorDirection(elevio.MD_Stop)
+	// } else if  newFloor == 0 {
+	// 	elevio.SetMotorDirection(elevio.MD_Stop)
+	// }
 
 	// switch CurrElev[pos].State {
 	// case elevio.Moving:
@@ -152,10 +152,10 @@ func OnFloorArrival(newFloor int, pos int, activeE int, mypos int) {
 		// fmt.Printf("Requests: %+v\n", CurrElev[1].Requests)
 
 		if requests.ShouldStop(CurrElev[pos]) {
-			//fmt.Printf("ser begge heiser dette?\n")
+			fmt.Printf("ser begge heiser dette?\n")
 			// fmt.Printf("pos, %d\n", mypos)
 			if pos == mypos {
-
+				fmt.Printf("pls nooo for elev 0\n")
 				elevio.SetMotorDirection(elevio.MD_Stop)
 				elevio.SetDoorOpenLamp(true)
 				Door_timer.Reset(3 * time.Second)
@@ -170,6 +170,8 @@ func OnFloorArrival(newFloor int, pos int, activeE int, mypos int) {
 
 
 			CurrElev[pos].State = elevio.DoorOpen
+			fmt.Printf("bunn av should stop \n")
+			fmt.Printf("MotorDirection: %d\n", CurrElev[0].Dir)
 		}
 	//}
 	  // fmt.Printf("AccOrders i OnFloorArrival: %+v\n", CurrElev[0].AcceptedOrders)
@@ -188,9 +190,9 @@ func OnFloorArrival(newFloor int, pos int, activeE int, mypos int) {
 func OnDoorTimeout(pos int, mypos int) {
 	switch CurrElev[pos].State {
 	case elevio.DoorOpen:
-		fmt.Printf("blir dette printet hos begge ODT case door open?\n")
+		//fmt.Printf("blir dette printet hos begge ODT case door open?\n")
 		CurrElev[pos].Dir = requests.ChooseDirection(CurrElev[pos])
-		fmt.Printf("pos o ODT. %d\n", pos)
+		//fmt.Printf("pos o ODT. %d\n", pos)
 		if pos == mypos{
 			elevio.SetDoorOpenLamp(false)
 			elevio.SetMotorDirection(CurrElev[pos].Dir)
