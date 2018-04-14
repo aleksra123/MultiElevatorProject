@@ -124,11 +124,12 @@ func main() {
 
 				} else {
 					 sentmsg.ElevList[pos].Requests[a.Floor][a.Button] = true
-					// sentmsg.ButtonPushed[0] = a.Floor
-					// sentmsg.Msgtype = 1
-					// msgTrans <- sentmsg
+					sentmsg.ButtonPushed[0] = a.Floor
+					sentmsg.ButtonPushed[1] = int(a.Button)
+					sentmsg.Msgtype = 1
+					msgTrans <- sentmsg
 					elevio.SetButtonLamp(a.Button, a.Floor, true)
-					fsm.OnRequestButtonPress(a.Floor, a.Button, pos, activeElevs, pos)
+					//fsm.OnRequestButtonPress(a.Floor, a.Button, pos, activeElevs, pos)
 				}
 			}
 
@@ -166,9 +167,10 @@ func main() {
 			ackmsg.Receiver = pos
 			msgAckT <- ackmsg
 
-			// if a.Msgtype == 1 {
-			// 	fsm.AddCabRequest(a.ListPos, a.ButtonPushed[0])
-			// }
+			if a.Msgtype == 1 {
+				fsm.AddCabRequest(a.ListPos, a.ButtonPushed[0])
+				fsm.OnRequestButtonPress(a.ButtonPushed[0], elevio.ButtonType(a.ButtonPushed[1]), a.ListPos, activeElevs, pos)
+			}
 
 			if a.Msgtype == 2 {
 				fsm.OnFloorArrival(a.ElevList[a.ListPos].Floor, a.ListPos, activeElevs, pos)

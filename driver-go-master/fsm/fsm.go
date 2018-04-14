@@ -72,9 +72,9 @@ func SetAllLights(es elevio.Elevator) {
 	}
 
 }
-// func AddCabRequest(pos int, floor int) {
-// 	CurrElev[pos].Requests[floor][elevio.BT_Cab] = true
-// }
+func AddCabRequest(pos int, floor int) {
+	CurrElev[pos].Requests[floor][elevio.BT_Cab] = true
+}
 
 func Init() {
 	elevio.SetMotorDirection(elevio.MD_Down)
@@ -169,7 +169,7 @@ func OnFloorArrival(newFloor int, pos int, activeE int, mypos int) {
 
 	CurrElev[pos].Floor = newFloor
 	elevio.SetFloorIndicator(CurrElev[mypos].Floor)
-
+	fmt.Printf("Requests: %+v, ooog pos: %d\n", CurrElev[pos].Requests, pos)
 	if requests.ShouldStop(CurrElev[pos]) {
 
 		for i := 0; i < activeE; i++ {
@@ -207,18 +207,18 @@ func OnDoorTimeout(pos int, mypos int) {
 	// CurrElev[pos].State = state
 	switch CurrElev[pos].State {
 	case elevio.DoorOpen:
-		fmt.Printf("kommer begge her ? OnDoorTimeout\n")
-		fmt.Printf("Requests: %+v\n", CurrElev[pos].Requests)
+		// fmt.Printf("kommer begge her ? OnDoorTimeout\n")
+		// fmt.Printf("Requests: %+v\n", CurrElev[pos].Requests)
 		CurrElev[pos].Dir = requests.ChooseDirection(CurrElev[pos])
 		if pos == mypos{
 			elevio.SetDoorOpenLamp(false)
 			elevio.SetMotorDirection(CurrElev[pos].Dir)
 		}
 		if CurrElev[pos].Dir == elevio.MD_Stop {
-			fmt.Printf("så det er her jeg ikke kommer?\n")
+
 			CurrElev[pos].State = elevio.Idle
 		} else {
-			fmt.Printf("dette ska kje skje vettu\n")
+
 			CurrElev[pos].State = elevio.Moving
 			if pos == mypos {
 				Power_timer.Reset(5 * time.Second)

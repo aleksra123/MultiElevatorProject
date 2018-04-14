@@ -2,7 +2,7 @@ package requests
 
 import (
 	. "../elevio" //Explicit ?
-//	"fmt"
+	"fmt"
 )
 
 func Check_above(e Elevator) bool {
@@ -61,12 +61,15 @@ func ChooseDirection(e Elevator) MotorDirection {
 func ShouldStop(e Elevator) bool {
 	switch e.Dir {
 	case MD_Down:
-
+		fmt.Printf("dooown\n")
 		return e.Requests[e.Floor][BT_HallDown] || e.Requests[e.Floor][BT_Cab] || !Check_below(e)
 	case MD_Up:
+		fmt.Printf("case UP i Should stop\n")
 		return e.Requests[e.Floor][BT_HallUp] || e.Requests[e.Floor][BT_Cab] || !Check_above(e)
 	case MD_Stop:
+		fmt.Printf("stop\n")
 	default:
+		fmt.Printf("test\n")
 		return true
 	}
 	return true
