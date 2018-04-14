@@ -51,13 +51,9 @@ func main() {
 	go elevio.PollStopButton(drv_stop)
 
 
-	select { //Init
-	case <-drv_floors:
-		elevio.SetMotorDirection(elevio.MD_Stop)
-		fsm.Elev.State = elevio.Idle
-	default:
-		fsm.OnInitBetweenFloors()
-	}
+
+	fsm.Init()
+
 
 	type AckMsg struct {
 		Orgsend int
@@ -107,7 +103,7 @@ func main() {
 	for {
 		select {
 		case a := <-drv_buttons:
-			if pos != -1 {
+			if pos != -1 && !fsm.FirstTime{
 				if a.Button != 2 {
 
 					sentmsg.ButtonPushed[0] = a.Floor
@@ -127,7 +123,10 @@ func main() {
 					}
 
 				} else {
-					sentmsg.ElevList[pos].Requests[a.Floor][a.Button] = true
+					 sentmsg.ElevList[pos].Requests[a.Floor][a.Button] = true
+					// sentmsg.ButtonPushed[0] = a.Floor
+					// sentmsg.Msgtype = 1
+					// msgTrans <- sentmsg
 					elevio.SetButtonLamp(a.Button, a.Floor, true)
 					fsm.OnRequestButtonPress(a.Floor, a.Button, pos, activeElevs, pos)
 				}
@@ -167,24 +166,21 @@ func main() {
 			ackmsg.Receiver = pos
 			msgAckT <- ackmsg
 
+			// if a.Msgtype == 1 {
+			// 	fsm.AddCabRequest(a.ListPos, a.ButtonPushed[0])
+			// }
 
 			if a.Msgtype == 2 {
 				fsm.OnFloorArrival(a.ElevList[a.ListPos].Floor, a.ListPos, activeElevs, pos)
 			}
 
-
 			if a.Msgtype == 3{
 				if a.ButtonPushed[0] != -10 {
-
 					for i := 0; i < activeElevs; i++ {
 						sentmsg.ElevList[i].AcceptedOrders[a.ButtonPushed[0]][a.ButtonPushed[1]] = 1
 						a.ElevList[i].AcceptedOrders[a.ButtonPushed[0]][a.ButtonPushed[1]] = 1
 					}
-
-
-					//fmt.Printf("AO: %+v\n", a.ElevList[a.ListPos].AcceptedOrders)
 				}
-
 				fsm.RecievedMSG(a.ButtonPushed[0], a.ButtonPushed[1], a.ListPos, a.ElevList[a.ListPos], activeElevs, pos)
 				sentmsg.ButtonPushed[0] = -10 // same as init value so we dont keep sending the same buttonpress forever
 			}
@@ -197,15 +193,11 @@ func main() {
 			fmt.Printf("%+v\n", a)
 			if a {
 				elevio.SetMotorDirection(elevio.MD_Stop)
-
 			} else {
 				fsm.Power_timer.Stop()
 				peerTxEnable <- true
-				fsm.OnInitBetweenFloors()
+				// lag en reboot function i fsm
 			}
-			//else {
-			// 	elevio.SetMotorDirection(d)
-			// }
 
 		case a := <-drv_stop:
 			fmt.Printf("%+v\n", a)
@@ -214,6 +206,7 @@ func main() {
 					elevio.SetButtonLamp(b, f, false)
 				}
 			}
+
 		case <-drv_timeout:
 
 			 sentmsg.ListPos = pos
@@ -222,11 +215,9 @@ func main() {
 
 		case <- drv_powerout:
 			fsm.Powerout(pos)
-			fmt.Printf("drvpowerout \n")
+
 			peerTxEnable <- false
 			pos = -1
-
-
 
 		}
 	}

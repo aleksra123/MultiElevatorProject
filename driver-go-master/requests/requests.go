@@ -61,7 +61,7 @@ func ChooseDirection(e Elevator) MotorDirection {
 func ShouldStop(e Elevator) bool {
 	switch e.Dir {
 	case MD_Down:
-		fmt.Printf("dette e rett case, bør vises på begge etter 'ser begge dette'\n")
+		
 		return e.Requests[e.Floor][BT_HallDown] || e.Requests[e.Floor][BT_Cab] || !Check_below(e)
 	case MD_Up:
 		return e.Requests[e.Floor][BT_HallUp] || e.Requests[e.Floor][BT_Cab] || !Check_above(e)
@@ -74,15 +74,53 @@ func ShouldStop(e Elevator) bool {
 
 func ClearAtCurrentFloor(e Elevator) Elevator {
 
-		for btn := 0; btn < NumButtons-1; btn++ {
-			e.AcceptedOrders[e.Floor][btn] = 0
+	switch e.Dir {
+	case MD_Down:
+		fmt.Printf("case down\n")
+		e.AcceptedOrders[e.Floor][BT_HallDown] = 0
+		if !Check_below(e) {
+			e.AcceptedOrders[e.Floor][BT_HallUp] = 0
 		}
-	return e //Why does it return an elevator-type?
+		return e
+	case MD_Up:
+		fmt.Printf("case up\n")
+		e.AcceptedOrders[e.Floor][BT_HallUp] = 0
+		if !Check_above(e) {
+			e.AcceptedOrders[e.Floor][BT_HallDown] = 0
+		}
+		return e
+	case MD_Stop:
+		fmt.Printf("case stop\n")
+		e.AcceptedOrders[e.Floor][BT_HallUp] = 0
+		e.AcceptedOrders[e.Floor][BT_HallDown] = 0
+		return e
+	default:
+		return e
+	}
+
+
 }
 
 func ClearRequests(e Elevator) Elevator {
-	for button := 0; button < NumButtons; button++ {
-		e.Requests[e.Floor][button] = false
+	e.Requests[e.Floor][BT_Cab] = false
+	switch e.Dir {
+	case MD_Down:
+		e.Requests[e.Floor][BT_HallDown] = false
+		if !Check_below(e) {
+			e.Requests[e.Floor][BT_HallUp] = false
+		}
+		return e
+	case MD_Up:
+		e.Requests[e.Floor][BT_HallUp] = false
+		if !Check_above(e) {
+			e.Requests[e.Floor][BT_HallDown] = false
+		}
+		return e
+	case MD_Stop:
+		e.Requests[e.Floor][BT_HallUp] = false
+		e.Requests[e.Floor][BT_HallDown] = false
+		return e
+	default:
+		return e
 	}
-	return e
 }
