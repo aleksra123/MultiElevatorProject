@@ -18,6 +18,7 @@ var CurrElev = [elevio.NumElevators]elevio.Elevator{} //liste med elevs som main
 
 //var Teller int = 0
 
+
 func RecievedMSG(floor int, button int, pos int, e elevio.Elevator, activeE int, mypos int) {
 
 	var index int
@@ -98,7 +99,7 @@ func OnRequestButtonPress(btn_floor int, btn_type elevio.ButtonType, pos int, ac
 	switch CurrElev[pos].State {
 
 	case elevio.DoorOpen:
-		//fmt.Printf("case door open?\n")
+		fmt.Printf("case door open?\n")
 		if CurrElev[pos].Floor == btn_floor {
 			for i := 0; i < activeE; i++ {
 			CurrElev[i].AcceptedOrders = requests.ClearAtCurrentFloor(CurrElev[pos]).AcceptedOrders
@@ -116,7 +117,7 @@ func OnRequestButtonPress(btn_floor int, btn_type elevio.ButtonType, pos int, ac
 		}
 
 	case elevio.Moving:
-		//fmt.Printf("case moving ?\n")
+		fmt.Printf("case moving ?\n")
 		CurrElev[pos].Requests[btn_floor][btn_type] = true
 
 	case elevio.Idle:

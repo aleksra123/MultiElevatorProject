@@ -82,7 +82,7 @@ func ShouldStop(e Elevator) bool {
 	return true
 }
 
-func ClearAtCurrentFloor(e Elevator) Elevator {
+func ClearAtCurrentFloor(e Elevator) Elevator { // kanskje ta inn active elevs for a cleare samme floor ved en elev
 
 	switch e.Dir {
 	case MD_Down:

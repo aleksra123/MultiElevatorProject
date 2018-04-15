@@ -3,14 +3,14 @@ package main
 import (
 	"flag"
 	"fmt"
-	"os"
+	//"os"
 	"time"
 
 	"../Network-go-master/network/bcast"
 	"../Network-go-master/network/peers"
 	"./elevio"
 	"./fsm"
-	//"./requests"
+	"./requests"
 )
 
 
@@ -23,9 +23,9 @@ func main() {
 
 
 	activeElevs := 1         // HAS to be non-zero initialized. Is however promptly updated to correct value bc of peerupdate
-	port := ":" + os.Args[2] // this is nescessary to run the test.sh shell. if you want to run normally use the line below
-	//elevio.Init("localhost:(same_port_as_in:_sim.con)", elevio.NumFloors)
-	elevio.Init(port, elevio.NumFloors)
+	//port := ":" + os.Args[2] // this is nescessary to run the test.sh shell. if you want to run normally use the line below
+	elevio.Init("localhost:15657", elevio.NumFloors)
+	//elevio.Init(port, elevio.NumFloors)
 
 	fsm.Elev.State = elevio.Undefined
 	//var d elevio.MotorDirection = elevio.MD_Stop
@@ -82,7 +82,9 @@ func main() {
 	go bcast.Receiver(25000, msgRec, msgAckR)
 
 	var initialized bool = false
-	var pos int = -1 // blir oppdatert (nesten) med en gang heisen kommer online
+	// fsm.Start_blank()
+	var pos int = 0 // blir oppdatert (nesten) med en gang heisen kommer online
+	fsm.Init(pos)
 	var sentmsg = ElevMsg{}
 	sentmsg.Msgtype = -1
 	sentmsg.ButtonPushed = fsm.BP
@@ -214,6 +216,7 @@ func main() {
 			if a {
 				elevio.SetMotorDirection(elevio.MD_Stop)
 			} else {
+				elevio.SetMotorDirection(requests.ChooseDirection(fsm.CurrElev[pos]))
 				fsm.Power_timer.Stop()
 				peerTxEnable <- true
 				// lag en reboot function i fsm
