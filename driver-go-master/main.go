@@ -3,8 +3,9 @@ package main
 import (
 	"flag"
 	"fmt"
-	//"os"
+	"os"
 	"time"
+	"strconv"
 
 	"../Network-go-master/network/bcast"
 	"../Network-go-master/network/peers"
@@ -22,10 +23,10 @@ func main() {
 	}
 
 
-	activeElevs := 1         // HAS to be non-zero initialized. Is however promptly updated to correct value bc of peerupdate
-	//port := ":" + os.Args[2] // this is nescessary to run the test.sh shell. if you want to run normally use the line below
-	elevio.Init("localhost:15657", elevio.NumFloors)
-	//elevio.Init(port, elevio.NumFloors)
+	var activeElevs = 0// HAS to be non-zero initialized. Is however promptly updated to correct value bc of peerupdate
+	port := ":" + os.Args[2] // this is nescessary to run the test.sh shell. if you want to run normally use the line below
+	//elevio.Init("localhost:15657", elevio.NumFloors)
+	elevio.Init(port, elevio.NumFloors)
 
 	fsm.Elev.State = elevio.Undefined
 	//var d elevio.MotorDirection = elevio.MD_Stop
@@ -59,6 +60,7 @@ func main() {
 		ElevList     [elevio.NumElevators]elevio.Elevator //liste med alle heisene
 		ListPos      int
 		Msgtype      int    // 1 e BP, 2 e floor og 3 e pos
+		Lost 				 int
 	}
 
 	var id string
@@ -83,8 +85,8 @@ func main() {
 
 	var initialized bool = false
 	// fsm.Start_blank()
-	var pos int = 0 // blir oppdatert (nesten) med en gang heisen kommer online
-	fsm.Init(pos)
+	var pos int = -1 // blir oppdatert (nesten) med en gang heisen kommer online
+
 	var sentmsg = ElevMsg{}
 	sentmsg.Msgtype = -1
 	sentmsg.ButtonPushed = fsm.BP
@@ -97,7 +99,7 @@ func main() {
 		select {
 		case a := <-drv_buttons:
 			if pos != -1 && !fsm.CurrElev[pos].FirstTime{
-				if a.Button != 2 {
+				if a.Button != 2  && activeElevs > 1{
 
 					sentmsg.ButtonPushed[0] = a.Floor
 					sentmsg.ButtonPushed[1] = int(a.Button)
@@ -113,10 +115,11 @@ func main() {
 						}
 					}
 
-				} else {
-					 sentmsg.ElevList[pos].Requests[a.Floor][a.Button] = true
+				} else if a.Button == 2{
+					
 					sentmsg.ButtonPushed[0] = a.Floor
 					sentmsg.ButtonPushed[1] = int(a.Button)
+					sentmsg.ListPos = pos
 					sentmsg.Msgtype = 1
 					msgTrans <- sentmsg
 					elevio.SetButtonLamp(a.Button, a.Floor, true)
@@ -131,14 +134,26 @@ func main() {
 
 		case a := <-drv_floors: // til info så kjøres denne bare en gang når man kommer til en etasje, ikke loop
 			sentmsg.Msgtype = 2
+			sentmsg.ListPos = pos
 			sentmsg.ElevList[pos].Floor = a
 			msgTrans <- sentmsg
 
 
 		case p := <-peerUpdateCh:
 			peers.UpdatePeers(p)
+			prev := activeElevs
 			activeElevs = len(p.Peers)
 			var teller int
+			fmt.Printf("prev : %d, active Elevators: %d, my pos: %d\n", prev, activeElevs, pos)
+			if prev > activeElevs  {
+				fmt.Printf("HEI!!!\n")
+				lost, _ :=  strconv.Atoi(p.Lost[0])
+				// sentmsg.Msgtype = 8
+				// sentmsg.Lost = lost
+				// msgTrans <- sentmsg
+				fsm.CopyInfo(pos, lost)
+
+			}
 			for _, i := range p.Peers {
 
 				if i == id {
@@ -170,9 +185,6 @@ func main() {
 			ackmsg.Receiver = pos
 			msgAckT <- ackmsg
 
-			if a.Msgtype == 7 {
-				fsm.Online(a.ListPos, pos)
-			}
 
 			if a.Msgtype == 1 {
 				fsm.AddCabRequest(a.ListPos, a.ButtonPushed[0])
@@ -201,12 +213,21 @@ func main() {
 			}
 
 			if a.Msgtype == 5 {
+				fmt.Printf("bare for heis 0 ?\n")
 				fsm.Powerout(a.ListPos, activeElevs)
 			}
 
 			if a.Msgtype == 6 {
 				fsm.Updatepos(a.ListPos)
 			}
+
+			if a.Msgtype == 7 {
+				fsm.Online(a.ListPos, pos)
+			}
+
+			// if a.Msgtype == 8 {
+			// 	fsm.CopyInfo(a.)
+			// }
 
 
 
@@ -238,11 +259,13 @@ func main() {
 			 msgTrans <- sentmsg
 
 		case <- drv_powerout:
-			sentmsg.ListPos = pos
-			sentmsg.Msgtype = 5
-			msgTrans <- sentmsg
+			fmt.Printf("drv_powerout!\n")
+			// sentmsg.ListPos = pos
+			// sentmsg.Msgtype = 5
+			// msgTrans <- sentmsg
 			peerTxEnable <- false
-			pos = -1
+			// kjør funksjon som setter peerTxEnable = false og fiks derifra
+
 
 		}
 	}

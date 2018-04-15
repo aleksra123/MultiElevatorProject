@@ -82,25 +82,43 @@ func ShouldStop(e Elevator) bool {
 	return true
 }
 
-func ClearAtCurrentFloor(e Elevator) Elevator { // kanskje ta inn active elevs for a cleare samme floor ved en elev
+func ClearAtCurrentFloor(e Elevator, activeElevs int) Elevator { // kanskje ta inn active elevs for a cleare samme floor ved en elev
 
 	switch e.Dir {
 	case MD_Down:
 		// fmt.Printf("CACF case down\n")
-		if !Check_below(e) && !Check_atFloor(e){
-			e.AcceptedOrders[e.Floor][BT_HallUp] = 0
+		if activeElevs == 1{
+			if !Check_below(e) {
+				e.AcceptedOrders[e.Floor][BT_HallUp] = 0
+			}
+			e.AcceptedOrders[e.Floor][BT_HallDown] = 0
+			return e
+		}else {
+			if !Check_below(e) && !Check_atFloor(e) {
+				e.AcceptedOrders[e.Floor][BT_HallUp] = 0
+			}
+			e.AcceptedOrders[e.Floor][BT_HallDown] = 0
+			return e
 		}
-		e.AcceptedOrders[e.Floor][BT_HallDown] = 0
-		return e
 
 	case MD_Up:
-		// fmt.Printf("CACF case up\n")
-		if !Check_above(e) && !Check_atFloor(e){
+		fmt.Printf("CACF case up\n")
+
+		if activeElevs == 1 {
+			if !Check_above(e)  {
+			 //fmt.Printf("no pls\n")
+			 e.AcceptedOrders[e.Floor][BT_HallDown] = 0
+		 }
+		 e.AcceptedOrders[e.Floor][BT_HallUp] = 0
+		 return e
+		} else {
+		 if !Check_above(e) && !Check_atFloor(e) {
 			fmt.Printf("no pls\n")
 			e.AcceptedOrders[e.Floor][BT_HallDown] = 0
 		}
 		e.AcceptedOrders[e.Floor][BT_HallUp] = 0
 		return e
+	}
 
 	case MD_Stop:
 		// fmt.Printf("CACF case stop\n")
@@ -119,13 +137,13 @@ func ClearRequests(e Elevator) Elevator {
 	switch e.Dir {
 	case MD_Down:
 		e.Requests[e.Floor][BT_HallDown] = false
-		if !Check_below(e) {
+		if !Check_below(e) && !Check_atFloor(e){
 			e.Requests[e.Floor][BT_HallUp] = false
 		}
 		return e
 	case MD_Up:
 		e.Requests[e.Floor][BT_HallUp] = false
-		if !Check_above(e) {
+		if !Check_above(e) && !Check_atFloor(e){
 			e.Requests[e.Floor][BT_HallDown] = false
 		}
 		return e
