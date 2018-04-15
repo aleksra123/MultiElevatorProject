@@ -27,6 +27,13 @@ func Check_below(e Elevator) bool {
 	return false
 }
 
+func Check_atFloor(e Elevator) bool {
+	if e.AcceptedOrders[e.Floor][BT_HallUp] == 1 && e.AcceptedOrders[e.Floor][BT_HallDown] == 1 {
+		return true
+	}
+	return false
+}
+
 func ChooseDirection(e Elevator) MotorDirection {
 	switch e.Dir {
 	case MD_Up:
@@ -61,15 +68,15 @@ func ChooseDirection(e Elevator) MotorDirection {
 func ShouldStop(e Elevator) bool {
 	switch e.Dir {
 	case MD_Down:
-		fmt.Printf("dooown\n")
+		// fmt.Printf("SS dooown\n")
 		return e.Requests[e.Floor][BT_HallDown] || e.Requests[e.Floor][BT_Cab] || !Check_below(e)
 	case MD_Up:
-		fmt.Printf("case UP i Should stop\n")
+		// fmt.Printf("SS case UP i Should stop\n")
 		return e.Requests[e.Floor][BT_HallUp] || e.Requests[e.Floor][BT_Cab] || !Check_above(e)
 	case MD_Stop:
-		fmt.Printf("stop\n")
+		// fmt.Printf("SS stop\n")
 	default:
-		fmt.Printf("test\n")
+		// fmt.Printf("test\n")
 		return true
 	}
 	return true
@@ -79,21 +86,24 @@ func ClearAtCurrentFloor(e Elevator) Elevator {
 
 	switch e.Dir {
 	case MD_Down:
-		//fmt.Printf("case down\n")
-		e.AcceptedOrders[e.Floor][BT_HallDown] = 0
-		if !Check_below(e) {
+		// fmt.Printf("CACF case down\n")
+		if !Check_below(e) && !Check_atFloor(e){
 			e.AcceptedOrders[e.Floor][BT_HallUp] = 0
 		}
+		e.AcceptedOrders[e.Floor][BT_HallDown] = 0
 		return e
+
 	case MD_Up:
-		//fmt.Printf("case up\n")
-		e.AcceptedOrders[e.Floor][BT_HallUp] = 0
-		if !Check_above(e) {
+		// fmt.Printf("CACF case up\n")
+		if !Check_above(e) && !Check_atFloor(e){
+			fmt.Printf("no pls\n")
 			e.AcceptedOrders[e.Floor][BT_HallDown] = 0
 		}
+		e.AcceptedOrders[e.Floor][BT_HallUp] = 0
 		return e
+
 	case MD_Stop:
-		//fmt.Printf("case stop\n")
+		// fmt.Printf("CACF case stop\n")
 		e.AcceptedOrders[e.Floor][BT_HallUp] = 0
 		e.AcceptedOrders[e.Floor][BT_HallDown] = 0
 		return e

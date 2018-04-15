@@ -53,6 +53,7 @@ type Elevator struct {
 	Requests       [NumFloors][NumButtons]bool
 	AcceptedOrders [NumFloors][NumButtons - 1]int
 	Position       int
+	FirstTime			 bool
 
 }
 

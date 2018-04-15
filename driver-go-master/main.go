@@ -22,9 +22,6 @@ func main() {
 	}
 
 
-	// Lettest å kjøre test.sh for å komme i gang, men gjerne koble ut den ene heisen ettersom koden
-	// foreløpig bare funker med en. hehe
-
 	activeElevs := 1         // HAS to be non-zero initialized. Is however promptly updated to correct value bc of peerupdate
 	port := ":" + os.Args[2] // this is nescessary to run the test.sh shell. if you want to run normally use the line below
 	//elevio.Init("localhost:(same_port_as_in:_sim.con)", elevio.NumFloors)
@@ -51,10 +48,6 @@ func main() {
 	go elevio.PollStopButton(drv_stop)
 
 
-
-	fsm.Init()
-
-
 	type AckMsg struct {
 		Orgsend int
 		Receiver int
@@ -72,28 +65,26 @@ func main() {
 	flag.StringVar(&id, "id", "", "id of this peer")
 	flag.Parse()
 
+
+
 	peerUpdateCh := make(chan peers.PeerUpdate)
 	peerTxEnable := make(chan bool)
 	go peers.Transmitter(15231, string(id), peerTxEnable)
 	go peers.Receiver(15231, peerUpdateCh)
-
-
 
 	msgTrans := make(chan ElevMsg)
 	msgRec := make(chan ElevMsg)
 
 	msgAckT := make(chan AckMsg)
 	msgAckR := make(chan AckMsg)
-	//correctAck:= make(chan bool)
-
-	// msgTransElevator := make(chan elevio.Elevator)
-	// msgRecElevator := make(chan elevio.Elevator)
 
 	go bcast.Transmitter(25000, msgTrans, msgAckT )
 	go bcast.Receiver(25000, msgRec, msgAckR)
 
+	var initialized bool = false
 	var pos int = -1 // blir oppdatert (nesten) med en gang heisen kommer online
 	var sentmsg = ElevMsg{}
+	sentmsg.Msgtype = -1
 	sentmsg.ButtonPushed = fsm.BP
 	sentmsg.ElevList = fsm.CurrElev
 	var ackmsg = AckMsg{}
@@ -103,14 +94,12 @@ func main() {
 	for {
 		select {
 		case a := <-drv_buttons:
-			if pos != -1 && !fsm.FirstTime{
+			if pos != -1 && !fsm.CurrElev[pos].FirstTime{
 				if a.Button != 2 {
 
 					sentmsg.ButtonPushed[0] = a.Floor
 					sentmsg.ButtonPushed[1] = int(a.Button)
-					//sentmsg.Msgtype = 1
 					sentmsg.Msgtype = 3
-					//msgTrans <- sentmsg
 					for i := 0; i < 3; i++ {
 							msgTrans <- sentmsg
 							time.Sleep(5*time.Millisecond)
@@ -149,12 +138,24 @@ func main() {
 			activeElevs = len(p.Peers)
 			var teller int
 			for _, i := range p.Peers {
+
 				if i == id {
+
 					pos = teller
 					sentmsg.ListPos = pos
+					sentmsg.Msgtype = 6
 					sentmsg.ElevList[pos].Position = pos
-					sentmsg.Msgtype = 3
 					msgTrans <- sentmsg
+					if !initialized {
+						fmt.Printf("test\n")
+						fsm.Init(pos)
+						sentmsg.Msgtype = 7
+						msgTrans <- sentmsg
+						initialized = true
+					}
+
+
+
 					fmt.Printf("pos: %d\n", pos)
 				}
 				teller++
@@ -167,6 +168,10 @@ func main() {
 			ackmsg.Receiver = pos
 			msgAckT <- ackmsg
 
+			if a.Msgtype == 7 {
+				fsm.Online(a.ListPos, pos)
+			}
+
 			if a.Msgtype == 1 {
 				fsm.AddCabRequest(a.ListPos, a.ButtonPushed[0])
 				fsm.OnRequestButtonPress(a.ButtonPushed[0], elevio.ButtonType(a.ButtonPushed[1]), a.ListPos, activeElevs, pos)
@@ -177,7 +182,9 @@ func main() {
 			}
 
 			if a.Msgtype == 3{
+
 				if a.ButtonPushed[0] != -10 {
+					fmt.Printf("fra heis:  %d\n", a.ListPos)
 					for i := 0; i < activeElevs; i++ {
 						sentmsg.ElevList[i].AcceptedOrders[a.ButtonPushed[0]][a.ButtonPushed[1]] = 1
 						a.ElevList[i].AcceptedOrders[a.ButtonPushed[0]][a.ButtonPushed[1]] = 1
@@ -190,6 +197,17 @@ func main() {
 			if a.Msgtype == 4 {
 				fsm.OnDoorTimeout(a.ListPos, pos )
 			}
+
+			if a.Msgtype == 5 {
+				fsm.Powerout(a.ListPos, activeElevs)
+			}
+
+			if a.Msgtype == 6 {
+				fsm.Updatepos(a.ListPos)
+			}
+
+
+
 
 		case a := <-drv_obstr:
 			fmt.Printf("%+v\n", a)
@@ -217,8 +235,9 @@ func main() {
 			 msgTrans <- sentmsg
 
 		case <- drv_powerout:
-			fsm.Powerout(pos)
-
+			sentmsg.ListPos = pos
+			sentmsg.Msgtype = 5
+			msgTrans <- sentmsg
 			peerTxEnable <- false
 			pos = -1
 
