@@ -198,7 +198,7 @@ func OnFloorArrival(newFloor int, pos int, activeElevs int, mypos int) {
 		// 	CurrElev[pos].State = elevio.Moving
 		// }
 	}
-	if pos == mypos{
+	if pos == mypos && !CurrElev[pos].FirstTime{
 		Power_timer.Reset(5* time.Second)
 	}
 
@@ -206,8 +206,7 @@ func OnFloorArrival(newFloor int, pos int, activeElevs int, mypos int) {
 			if pos == mypos {
 				Power_timer.Stop()
 			}
-			fmt.Printf("skal ikke komme hit\n")
-			fmt.Printf("first time til heis 0:, %d\n", CurrElev[0].FirstTime)
+
 			CurrElev[mypos].AcceptedOrders = requests.ClearAtCurrentFloor(CurrElev[pos], activeElevs).AcceptedOrders
 			for i := 0; i < activeElevs; i++ {
 				CurrElev[i].AcceptedOrders = CurrElev[mypos].AcceptedOrders
