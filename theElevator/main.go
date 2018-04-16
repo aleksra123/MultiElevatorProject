@@ -2,8 +2,6 @@ package main
 
 import (
 	"flag"
-	//"fmt"
-	"os"
 	"time"
 	"strconv"
 
@@ -13,13 +11,18 @@ import (
 	"./fsm"
 
 )
+//
+// This system consists of 6 modules. The network module, the fsm(finite state machine) module, the request module,
+// the elevio module and the costfunction module all have their roots in the given project resources material. However the fsm has been altered quite
+// substantially to handle several elevators, and the request, elevio and costfunction modules have been tweaked to fit our needs.
+// The backup module writes caborders to file, and allows us to retrieve them after a reboot.
 
 func main() {
 
 	var activeElevs = 0
-	port := ":" + os.Args[2]
-	elevio.Init(port, elevio.NumFloors) // this is nescessary to run the test.sh shell.
-	 //elevio.Init("localhost:15657", elevio.NumFloors)
+	//port := ":" + os.Args[2]
+	//elevio.Init(port, elevio.NumFloors) // this is nescessary to run the test.sh shell.
+	elevio.Init("localhost:15657", elevio.NumFloors)
 
 
 	drv_buttons := make(chan elevio.ButtonEvent)
@@ -150,7 +153,7 @@ func main() {
 			if prev > activeElevs  {
 				lost, _ :=  strconv.Atoi(p.Lost[0])
 				fsm.TransferRequests(lost, activeElevs, pos)
-				fsm.CopyInfo_Loss(lost, activeElevs)
+				fsm.CopyInfo_Lost(lost, activeElevs)
 			}
 
 			if activeElevs > 1 {
@@ -229,7 +232,7 @@ func main() {
 
 			if a.Msgtype == 7 {
 				fsm.Online(a.ListPos, pos)
-				fsm.DeleteBackup()
+
 			}
 
 		case a := <-drv_obstr:

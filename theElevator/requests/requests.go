@@ -1,14 +1,14 @@
 package requests
 
 import (
-	. "../elevio" //Explicit ?
-	"fmt"
+	."../elevio"
+	
 )
 
 func Check_above(e Elevator) bool {
 	for floor := e.Floor + 1; floor < NumFloors; floor++ {
 		for button := 0; button < NumButtons; button++ {
-			if e.Requests[floor][button] { // ==true --> order
+			if e.Requests[floor][button] {
 				return true
 			}
 		}
@@ -44,7 +44,7 @@ func ChooseDirection(e Elevator) MotorDirection {
 		} else {
 			return MD_Stop
 		}
-	case MD_Down: //Compared to C-code. Is this redundant?
+	case MD_Down:
 		if Check_below(e) {
 			return MD_Down
 		} else if Check_above(e) {
@@ -52,7 +52,7 @@ func ChooseDirection(e Elevator) MotorDirection {
 		} else {
 			return MD_Stop
 		}
-	case MD_Stop: //Only one request. Arbitrary if we check up or down first
+	case MD_Stop:
 		if Check_below(e) {
 			return MD_Down
 		} else if Check_above(e) {
@@ -68,25 +68,25 @@ func ChooseDirection(e Elevator) MotorDirection {
 func ShouldStop(e Elevator) bool {
 	switch e.Dir {
 	case MD_Down:
-		// fmt.Printf("SS dooown\n")
+
 		return e.Requests[e.Floor][BT_HallDown] || e.Requests[e.Floor][BT_Cab] || !Check_below(e)
 	case MD_Up:
-		// fmt.Printf("SS case UP i Should stop\n")
+
 		return e.Requests[e.Floor][BT_HallUp] || e.Requests[e.Floor][BT_Cab] || !Check_above(e)
 	case MD_Stop:
-		 fmt.Printf("SS stop\n")
+
 	default:
-		// fmt.Printf("test\n")
+
 		return true
 	}
 	return true
 }
 
-func ClearAtCurrentFloor(e Elevator, activeElevs int) Elevator { // kanskje ta inn active elevs for a cleare samme floor ved en elev
+func ClearAtCurrentFloor(e Elevator, activeElevs int) Elevator {
 
 	switch e.Dir {
 	case MD_Down:
-		// fmt.Printf("CACF case down\n")
+
 		if activeElevs == 1{
 			if !Check_below(e) {
 				e.AcceptedOrders[e.Floor][BT_HallUp] = 0
@@ -102,18 +102,15 @@ func ClearAtCurrentFloor(e Elevator, activeElevs int) Elevator { // kanskje ta i
 		}
 
 	case MD_Up:
-		fmt.Printf("CACF case up\n")
 
 		if activeElevs == 1 {
 			if !Check_above(e)  {
-			 //fmt.Printf("no pls\n")
 			 e.AcceptedOrders[e.Floor][BT_HallDown] = 0
 		 }
 		 e.AcceptedOrders[e.Floor][BT_HallUp] = 0
 		 return e
 		} else {
 		 if !Check_above(e) && !Check_atFloor(e) {
-			fmt.Printf("no pls\n")
 			e.AcceptedOrders[e.Floor][BT_HallDown] = 0
 		}
 		e.AcceptedOrders[e.Floor][BT_HallUp] = 0
@@ -121,7 +118,6 @@ func ClearAtCurrentFloor(e Elevator, activeElevs int) Elevator { // kanskje ta i
 	}
 
 	case MD_Stop:
-		// fmt.Printf("CACF case stop\n")
 		e.AcceptedOrders[e.Floor][BT_HallUp] = 0
 		e.AcceptedOrders[e.Floor][BT_HallDown] = 0
 		return e

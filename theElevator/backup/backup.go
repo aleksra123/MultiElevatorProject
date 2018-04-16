@@ -32,7 +32,7 @@ func ReadBackup(CabList elevio.Elevator) elevio.Elevator{
 	}else{
 
 	json.Unmarshal(c, &backup)
-	fmt.Println("Orders saved from backup: ")
+	
 	for _, order := range backup {
 		CabList.Requests = AddCabOrder(CabList, order).Requests
 		}
