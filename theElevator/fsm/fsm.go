@@ -7,13 +7,14 @@ import (
 	"../costfunction"
 	"../elevio"
 	"../requests"
+	"../backup"
 )
 
 var Elev elevio.Elevator
 var Door_timer = time.NewTimer(3 * time.Second)
 var Power_timer = time.NewTimer(5* time.Second)
 var AckMat = [elevio.NumElevators][elevio.NumFloors][elevio.NumButtons - 1]int{} //acknowledged orders matrise
-var BP = [2]int{-10, 0}
+var BP [2]int
 var CurrElev = [elevio.NumElevators]elevio.Elevator{} //liste med elevs som main bruker i sentmsg, se main:68
 
 //var Teller int = 0
@@ -28,7 +29,7 @@ func RecievedMSG(floor int, button int, pos int, e elevio.Elevator, activeE int,
 					for i := 0; i < activeE; i++ {
 						CurrElev[i].AcceptedOrders[floor][button] = e.AcceptedOrders[floor][button]
 					}
-					 index = costfunction.CostCalc(CurrElev, activeE)
+					 index = costfunction.CostCalc(CurrElev, activeE, -1)
 					 CurrElev[index].Requests[floor][button] = true
 					 if pos == mypos {
 
@@ -76,12 +77,25 @@ func SetAllLights(es elevio.Elevator) {
 	}
 
 }
-func AddCabRequest(pos int, floor int) {
+func AddCabRequest(pos int, floor int, mypos int) {
 	CurrElev[pos].Requests[floor][elevio.BT_Cab] = true
+	if pos == mypos {
+	backup.UpdateBackup(CurrElev[pos])
+	}
 }
 
-func Init( pos int) {
+func DeleteBackup(){
+	var empty elevio.Elevator
+	backup.UpdateBackup(empty)
+}
+
+func Init( pos int, activeElevs int) {
 	elevio.SetMotorDirection(elevio.MD_Down)
+	CurrElev[pos].Requests = backup.ReadBackup(CurrElev[pos]).Requests
+
+
+
+	fmt.Printf("dette må testes: %+v\n", CurrElev[pos].Requests)
 	CurrElev[pos].State = elevio.Moving //
 	CurrElev[pos].Dir = elevio.MD_Down // failsafes in case of package loss
 	CurrElev[pos].FirstTime = true     //
@@ -91,15 +105,62 @@ func Updatepos(pos int){
 	CurrElev[pos].Position = pos
 }
 
-func CopyInfo(pos int, lost int){
-	fmt.Printf("Dette er lost: %d og dette er pos: %d\n", lost, pos)
-	if pos+1 > lost {
-		CurrElev[pos-1].AcceptedOrders = CurrElev[pos].AcceptedOrders
-		CurrElev[pos-1].Requests = CurrElev[pos].Requests
-		CurrElev[pos-1].State = CurrElev[pos].State
-		CurrElev[pos-1].Dir = CurrElev[pos].Dir
-		CurrElev[pos-1].Position = CurrElev[pos].Position
-		CurrElev[pos-1].Floor = CurrElev[pos].Floor
+func CopyInfo_Loss( lost int, activeElevs int){
+
+
+	for i := 1; i < activeElevs+1; i++ {
+		if i == lost {
+			CurrElev[lost-1].AcceptedOrders = CurrElev[lost].AcceptedOrders
+			CurrElev[lost-1].Requests = CurrElev[lost].Requests
+			CurrElev[lost-1].State = CurrElev[lost].State
+			CurrElev[lost-1].Dir = CurrElev[lost].Dir
+			CurrElev[lost-1].Position = CurrElev[lost].Position
+			CurrElev[lost-1].Floor = CurrElev[lost].Floor
+		} else if i > lost {
+			CurrElev[lost].AcceptedOrders = CurrElev[lost+1].AcceptedOrders
+			CurrElev[lost].Requests = CurrElev[lost+1].Requests
+			CurrElev[lost].State = CurrElev[lost+1].State
+			CurrElev[lost].Dir = CurrElev[lost+1].Dir
+			CurrElev[lost].Position = CurrElev[lost+1].Position
+			CurrElev[lost].Floor = CurrElev[lost+1].Floor
+		}
+	}
+}
+
+func CopyInfo_New(new int , activeElevs int) {
+
+	for i := 1; i < activeElevs+1; i++ {
+		if i == new {
+			CurrElev[new].AcceptedOrders = CurrElev[new-1].AcceptedOrders
+			CurrElev[new].Requests = CurrElev[new-1].Requests
+			CurrElev[new].State = CurrElev[new-1].State
+			CurrElev[new].Dir = CurrElev[new-1].Dir
+			CurrElev[new].Position = CurrElev[new-1].Position
+			CurrElev[new].Floor = CurrElev[new-1].Floor
+		} else if i > new {
+			CurrElev[new+1].AcceptedOrders = CurrElev[new].AcceptedOrders
+			CurrElev[new+1].Requests = CurrElev[new].Requests
+			CurrElev[new+1].State = CurrElev[new].State
+			CurrElev[new+1].Dir = CurrElev[new].Dir
+			CurrElev[new+1].Position = CurrElev[new].Position
+			CurrElev[new+1].Floor = CurrElev[new].Floor
+		}
+	}
+}
+
+func TransferRequests(lost int, activeElevs int, pos int) {
+	fmt.Printf("inni Trans\n")
+	index := 0
+	for floor := 0; floor < elevio.NumFloors; floor++ {
+		for button := 0; button < elevio.NumButtons-1; button++ {
+			if CurrElev[lost-1].Requests[floor][button] {
+					fmt.Printf("inni Trans for for if\n")
+					index = costfunction.CostCalc(CurrElev, activeElevs , lost-1)
+
+					OnRequestButtonPress(floor, elevio.ButtonType(button), index+1, activeElevs, pos)
+
+			}
+		}
 	}
 }
 
@@ -175,7 +236,7 @@ func OnFloorArrival(newFloor int, pos int, activeElevs int, mypos int) {
 
 	CurrElev[pos].Floor = newFloor
 	elevio.SetFloorIndicator(CurrElev[mypos].Floor)
-
+	//var dontopen bool
 
 	if CurrElev[pos].FirstTime {
 
@@ -183,30 +244,32 @@ func OnFloorArrival(newFloor int, pos int, activeElevs int, mypos int) {
 		CurrElev[pos].Dir = elevio.MD_Down
 
 		if newFloor == 0 {
-			fmt.Printf("kommer begge hit?\n")
-			if pos == mypos {
-				elevio.SetMotorDirection(elevio.MD_Stop)
-			}
 			CurrElev[pos].State = elevio.Idle
 			CurrElev[pos].Dir = elevio.MD_Stop
+			if pos == mypos {
+				elevio.SetMotorDirection(elevio.MD_Stop)
+				for floor :=0; floor < elevio.NumFloors; floor++{
+					if CurrElev[pos].Requests[floor][elevio.BT_Cab] {
+						//dontopen = true
+						OnRequestButtonPress(floor, elevio.BT_Cab, pos, activeElevs, pos)
+
+					}
+				}
+
+			}
+
 		}
-		//CurrElev[pos].Dir = requests.ChooseDirection(CurrElev[pos])
-		// if mypos == pos {
-		// 	elevio.SetMotorDirection(CurrElev[mypos].Dir)
-		// }
-		// if CurrElev[pos].Dir != elevio.MD_Stop{
-		// 	CurrElev[pos].State = elevio.Moving
-		// }
+
 	}
 	if pos == mypos && !CurrElev[pos].FirstTime{
 		Power_timer.Reset(5* time.Second)
 	}
 
-	if requests.ShouldStop(CurrElev[pos]) && !CurrElev[pos].FirstTime{
+	if requests.ShouldStop(CurrElev[pos]) && !CurrElev[pos].FirstTime { // && !dontopen{
 			if pos == mypos {
 				Power_timer.Stop()
 			}
-
+			fmt.Printf("skal ikke komme hit\n")
 			CurrElev[mypos].AcceptedOrders = requests.ClearAtCurrentFloor(CurrElev[pos], activeElevs).AcceptedOrders
 			for i := 0; i < activeElevs; i++ {
 				CurrElev[i].AcceptedOrders = CurrElev[mypos].AcceptedOrders
@@ -233,6 +296,9 @@ func OnFloorArrival(newFloor int, pos int, activeElevs int, mypos int) {
 	}
 	if newFloor == 0 {
 		CurrElev[pos].FirstTime = false
+		// if pos == mypos{
+		// 	dontopen = false
+		// }
 
 	}
 }

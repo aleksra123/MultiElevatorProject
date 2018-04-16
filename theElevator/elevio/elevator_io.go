@@ -54,6 +54,7 @@ type Elevator struct {
 	AcceptedOrders [NumFloors][NumButtons - 1]int
 	Position       int
 	FirstTime			 bool
+	//MotorFailure   bool
 
 }
 

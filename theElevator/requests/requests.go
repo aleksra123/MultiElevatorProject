@@ -74,7 +74,7 @@ func ShouldStop(e Elevator) bool {
 		// fmt.Printf("SS case UP i Should stop\n")
 		return e.Requests[e.Floor][BT_HallUp] || e.Requests[e.Floor][BT_Cab] || !Check_above(e)
 	case MD_Stop:
-		// fmt.Printf("SS stop\n")
+		 fmt.Printf("SS stop\n")
 	default:
 		// fmt.Printf("test\n")
 		return true
