@@ -7,8 +7,8 @@ import (
 	"time"
 	"strconv"
 
-	"../Network-go-master/network/bcast"
-	"../Network-go-master/network/peers"
+	"./network/bcast"
+	"./network/peers"
 	"./elevio"
 	"./fsm"
 	"./requests"
@@ -116,7 +116,7 @@ func main() {
 					}
 
 				} else if a.Button == 2{
-					
+
 					sentmsg.ButtonPushed[0] = a.Floor
 					sentmsg.ButtonPushed[1] = int(a.Button)
 					sentmsg.ListPos = pos

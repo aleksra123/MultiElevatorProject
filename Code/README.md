@@ -1,1 +1,0 @@
-# Vælkømmin' tel koa' vår. 
