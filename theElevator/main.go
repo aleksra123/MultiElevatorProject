@@ -201,6 +201,10 @@ func main() {
 			ackmsg.Orgsender = a.ListPos
 			ackmsg.Receiver = pos
 			msgAckT <- ackmsg
+			// for i := 0; i < 5; i++ {
+			// 	msgAckT <- ackmsg
+			// }
+
 
 
 			if a.Msgtype == 1 {
