@@ -104,6 +104,7 @@ func main() {
 				} else if a.Button == 2{
 
 					elevio.SetButtonLamp(a.Button, a.Floor, true)
+					//fsm.OnRequestButtonPress(a.Floor, a.Button, pos, activeElevs, pos)
 
 					sentmsg.ButtonPushed[0] = a.Floor
 					sentmsg.ButtonPushed[1] = int(a.Button)
@@ -126,6 +127,7 @@ func main() {
 				}
 
 		case a := <-drv_floors:
+			//fsm.OnFloorArrival(a.Floor, pos, activeElevs, pos)
 			sentmsg.Msgtype = 2
 			if pos != -1 {
 				sentmsg.ListPos = pos
@@ -139,10 +141,10 @@ func main() {
 					break
 				}
 			}
-			if MotorFailure{
-				peerTxEnable <- true
-				MotorFailure = false
-			}
+			// if MotorFailure{
+			// 	peerTxEnable <- true
+			// 	MotorFailure = false
+			// }
 
 		case p := <-peerUpdateCh:
 			peers.UpdatePeers(p)
@@ -156,7 +158,7 @@ func main() {
 				fsm.CopyInfo_Lost(lost, activeElevs)
 			}
 
-			if activeElevs > 1 {
+			if activeElevs > 1 { // && prev < activeElevs må ha med!
 				new, _ := strconv.Atoi(p.New)
 				fsm.CopyInfo_New(new, activeElevs )
 			}
@@ -202,12 +204,15 @@ func main() {
 
 			if a.Msgtype == 1 {
 				fsm.AddCabRequest(a.ListPos, a.ButtonPushed[0], pos)
-
+				// if a.ListPos != pos {
 				fsm.OnRequestButtonPress(a.ButtonPushed[0], elevio.ButtonType(a.ButtonPushed[1]), a.ListPos, activeElevs, pos)
+				//}
 			}
 
 			if a.Msgtype == 2 {
+				// if a.ListPos != pos {
 				fsm.OnFloorArrival(a.ElevList[a.ListPos].Floor, a.ListPos, activeElevs, pos)
+				//}
 			}
 
 			if a.Msgtype == 3{
@@ -219,7 +224,9 @@ func main() {
 			}
 
 			if a.Msgtype == 4 {
+				// if a.ListPos != pos {
 				fsm.OnDoorTimeout(a.ListPos, pos )
+				//}
 			}
 
 			if a.Msgtype == 5 {
@@ -248,9 +255,11 @@ func main() {
 			}
 
 		case <-drv_timeout:
+			 //fsm.OnDoorTimeout(pos, pos )
 		   sentmsg.ListPos = pos
 			 sentmsg.Msgtype = 4
 			 msgTrans <- sentmsg
+
 
 		case <- drv_powerout:
 			fsm.Power_timer.Stop()
