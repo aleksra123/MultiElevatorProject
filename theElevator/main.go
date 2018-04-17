@@ -9,6 +9,7 @@ import (
 	"./network/peers"
 	"./elevio"
 	"./fsm"
+	//"./backup"
 
 )
 //
@@ -105,7 +106,7 @@ func main() {
 
 					elevio.SetButtonLamp(a.Button, a.Floor, true)
 					//fsm.OnRequestButtonPress(a.Floor, a.Button, pos, activeElevs, pos)
-
+					//backup.UpdateBackup(fsm.CurrElev[pos])
 					sentmsg.ButtonPushed[0] = a.Floor
 					sentmsg.ButtonPushed[1] = int(a.Button)
 					sentmsg.ListPos = pos

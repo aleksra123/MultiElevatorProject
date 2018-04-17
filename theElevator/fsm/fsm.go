@@ -78,9 +78,9 @@ func SetAllLights(es elevio.Elevator) {
 }
 func AddCabRequest(pos int, floor int, mypos int) {
 	CurrElev[pos].Requests[floor][elevio.BT_Cab] = true
-	if pos == mypos {
-	backup.UpdateBackup(CurrElev[pos])
-	}
+	// if pos == mypos {
+	// backup.UpdateBackup(CurrElev[pos])
+	// }
 }
 
 
