@@ -246,7 +246,7 @@ func main() {
 		case a := <-drv_obstr:
 			if a {
 				elevio.SetMotorDirection(elevio.MD_Stop)
-				fsm.Power_timer.Stop()
+				//fsm.Power_timer.Stop()
 			}
 
 		case a := <-drv_stop:
