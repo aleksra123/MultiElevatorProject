@@ -159,7 +159,7 @@ func TransferRequests(lost int, activeElevs int, pos int) {
 func Online(pos int, mypos int){
 
 	CurrElev[pos].Position = pos
-	CurrElev[pos].FirstTime = true
+	CurrElev[pos].FirstTime = true //må kanskje slettes
 }
 
 
