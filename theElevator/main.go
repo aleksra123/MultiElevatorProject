@@ -179,7 +179,7 @@ func main() {
 						}
 					}
 					if !initialized {
-						fsm.Init(pos, activeElevs)
+						fsm.Init(pos, activeElevs) // må flyttes ???
 						initialized = true
 						sentmsg.Msgtype = 7
 						for i := 0; i < 10; i++ {
