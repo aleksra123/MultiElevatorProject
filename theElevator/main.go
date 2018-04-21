@@ -103,7 +103,7 @@ func main() {
 
 				} else if a.Button == 2 {
 
-					elevio.SetButtonLamp(a.Button, a.Floor, true)
+					//elevio.SetButtonLamp(a.Button, a.Floor, true)
 					fsm.OnRequestButtonPress(a.Floor, a.Button, pos, activeElevs, pos)
 					backup.UpdateBackup(fsm.CurrElev[pos])
 					sentmsg.ButtonPushed[0] = a.Floor
@@ -128,6 +128,8 @@ func main() {
 
 		case a := <-drv_floors:
 			fsm.OnFloorArrival(a, pos, activeElevs, pos)
+
+			backup.UpdateBackup(fsm.CurrElev[pos])
 			sentmsg.Msgtype = 2
 			if pos != -1 {
 				sentmsg.ListPos = pos
@@ -151,6 +153,12 @@ func main() {
 
 			if prev > activeElevs  {
 				lost, _ := strconv.Atoi(p.Lost[0])
+				// if lost == pos+1 {
+				// 	fmt.Printf("initialized\n")
+				// 	initialized = false
+				// }
+				fmt.Printf("main, pos: %d\n", pos)
+
 				fsm.TransferRequests(lost, activeElevs, pos)
 				fsm.CopyInfo_Lost(lost, activeElevs)
 			}
@@ -163,6 +171,7 @@ func main() {
 			for _, i := range p.Peers {
 				if i == id {
 					pos = teller
+					fmt.Printf("main, pos: %d\n", pos)
 					sentmsg.ListPos = pos
 					sentmsg.Msgtype = 6
 					sentmsg.ElevList[pos].Position = pos
