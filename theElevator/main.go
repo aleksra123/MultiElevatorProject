@@ -160,7 +160,7 @@ func main() {
 				fsm.CopyInfo_Lost(lost, activeElevs)
 			}
 
-			if activeElevs > 1 { // && prev < activeElevs må ha med!
+			if activeElevs > 1  && prev < activeElevs {
 				new, _ := strconv.Atoi(p.New)
 				fsm.CopyInfo_New(new, activeElevs )
 			}
