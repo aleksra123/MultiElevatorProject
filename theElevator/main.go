@@ -10,11 +10,9 @@ import (
 	"./network/peers"
 	"./elevio"
 	"./fsm"
-<<<<<<< HEAD
+
 	"./backup"
-=======
-	//"./backup"
->>>>>>> 2ebe88061e2fac879a9ca71ac160654bbb58aeed
+
 
 )
 //
