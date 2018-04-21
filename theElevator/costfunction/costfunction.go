@@ -64,7 +64,7 @@ func CostCalc(elevlist [elevio.NumElevators]elevio.Elevator, activeElevators int
 	var index int
 	var time float64
 	for i := 0; i < activeElevators; i++ {
-		elevlist[i].State = 0
+		// elevlist[i].State = 0
 		if i != lost {
 			time = timeToIdle(elevlist[i])
 			if time < minCost {
