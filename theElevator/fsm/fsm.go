@@ -2,7 +2,7 @@ package fsm
 
 import (
 	"time"
-	"fmt"
+
 
 	"../backup"
 	"../costfunction"
@@ -75,9 +75,7 @@ func SetAllLights(es elevio.Elevator) {
 }
 func AddCabRequest(pos int, floor int, mypos int) {
 	CurrElev[pos].Requests[floor][elevio.BT_Cab] = true
-	// if pos == mypos {
-	// backup.UpdateBackup(CurrElev[pos])
-	// }
+
 }
 
 func Init(pos int, activeElevs int) {
@@ -90,7 +88,7 @@ func Init(pos int, activeElevs int) {
 	CurrElev[pos].State = elevio.Moving //
 	CurrElev[pos].Dir = elevio.MD_Down  // failsafes in case of package loss
 	CurrElev[pos].FirstTime = true      //
-	
+
 }
 
 func Updatepos(pos int) {
@@ -140,14 +138,12 @@ func CopyInfo_New(new int, activeElevs int) {
 }
 
 func TransferRequests(lost int, activeElevs int, pos int) {
-fmt.Printf("trans, pos: %d\n", pos)
 	index := 0
 	for floor := 0; floor < elevio.NumFloors; floor++ {
 		for button := 0; button < elevio.NumButtons-1; button++ {
 			if CurrElev[lost-1].Requests[floor][button] {
 				index = costfunction.CostCalc(CurrElev, activeElevs+1, lost-1)
-				fmt.Printf("trans req, true\n")
-				fmt.Printf("trans, if, pos: %d\n", pos)
+
 				OnRequestButtonPress(floor, elevio.ButtonType(button), index, activeElevs, pos)
 
 			}
@@ -162,11 +158,10 @@ func Online(pos int, mypos int) {
 }
 
 func OnRequestButtonPress(btn_floor int, btn_type elevio.ButtonType, pos int, activeElevs int, mypos int) {
-	fmt.Printf("ORPB\n")
+
 	switch CurrElev[pos].State {
 
 	case elevio.DoorOpen:
-		fmt.Printf("ORPB, door open\n")
 		if CurrElev[pos].Floor == btn_floor {
 			for i := 0; i < activeElevs; i++ {
 				CurrElev[i].AcceptedOrders = requests.ClearAtCurrentFloor(CurrElev[pos], activeElevs).AcceptedOrders
@@ -185,15 +180,12 @@ func OnRequestButtonPress(btn_floor int, btn_type elevio.ButtonType, pos int, ac
 		}
 
 	case elevio.Moving:
-		fmt.Printf("ORPB, moving\n")
-		fmt.Printf("pos: %d\n", pos)
+		
 		CurrElev[pos].Requests[btn_floor][btn_type] = true
 
 	case elevio.Idle:
-		fmt.Printf("ORPB, idle\n")
 		if CurrElev[pos].Floor == btn_floor {
 			if pos == mypos {
-				fmt.Printf(" pos: %d\n", pos)
 				elevio.SetDoorOpenLamp(true)
 				Power_timer.Stop()
 			}
@@ -210,12 +202,11 @@ func OnRequestButtonPress(btn_floor int, btn_type elevio.ButtonType, pos int, ac
 			}
 
 		} else {
-			fmt.Printf("ORPB, idle, else\n")
 			CurrElev[pos].Requests[btn_floor][btn_type] = true
 			CurrElev[pos].Dir = requests.ChooseDirection(CurrElev[pos])
 			if pos == mypos {
 				elevio.SetMotorDirection(CurrElev[pos].Dir)
-				Power_timer.Reset(5 * time.Second) //bruk 8 sek i stedet
+				Power_timer.Reset(8 * time.Second)
 			}
 			CurrElev[pos].State = elevio.Moving
 
@@ -229,12 +220,10 @@ func OnFloorArrival(newFloor int, pos int, activeElevs int, mypos int) {
 	CurrElev[pos].Floor = newFloor
 	elevio.SetFloorIndicator(CurrElev[mypos].Floor)
 	if CurrElev[pos].FirstTime {
-		fmt.Printf("Lone er kul 2\n")
 		CurrElev[pos].State = elevio.Moving
 		CurrElev[pos].Dir = elevio.MD_Down
 
 		if newFloor == 0 {
-			fmt.Printf("Lone er kul 3\n")
 			CurrElev[pos].State = elevio.Idle
 			CurrElev[pos].Dir = elevio.MD_Stop
 			if pos == mypos {
@@ -281,8 +270,6 @@ func OnFloorArrival(newFloor int, pos int, activeElevs int, mypos int) {
 	if newFloor == 0 {
 
 		CurrElev[pos].FirstTime = false
-		fmt.Printf("pos: %d\n", pos)
-		fmt.Printf("Lone er kul 4\n")
 	}
 }
 
@@ -300,7 +287,6 @@ func OnDoorTimeout(pos int, mypos int) {
 			elevio.SetMotorDirection(CurrElev[pos].Dir)
 		}
 		if CurrElev[pos].Dir == elevio.MD_Stop {
-			fmt.Printf("MD_stop\n")
 			CurrElev[pos].State = elevio.Idle
 		} else {
 

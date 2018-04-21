@@ -192,7 +192,7 @@ func main() {
 						}
 					}
 					if !initialized {
-						fsm.Init(pos, activeElevs) // må flyttes ???
+						fsm.Init(pos, activeElevs)
 						initialized = true
 						sentmsg.Msgtype = 7
 						for i := 0; i < 10; i++ {
@@ -267,6 +267,8 @@ func main() {
 				elevio.SetMotorDirection(elevio.MD_Stop)
 				fsm.Power_timer.Stop()
 				//fsm.CurrElev[pos] = elevio.Idle ?
+			} else {
+				fsm.CurrElev[pos].State = elevio.Idle
 			}
 			//requests.choosedir ??
 
