@@ -81,6 +81,8 @@ func AddCabRequest(pos int, floor int, mypos int) {
 }
 
 func Init(pos int, activeElevs int) {
+	elevio.SetDoorOpenLamp(false)
+
 	elevio.SetMotorDirection(elevio.MD_Down)
 	CurrElev[pos].Requests = backup.ReadBackup(CurrElev[pos]).Requests
 	var empty elevio.Elevator
@@ -88,6 +90,7 @@ func Init(pos int, activeElevs int) {
 	CurrElev[pos].State = elevio.Moving //
 	CurrElev[pos].Dir = elevio.MD_Down  // failsafes in case of package loss
 	CurrElev[pos].FirstTime = true      //
+	
 }
 
 func Updatepos(pos int) {
@@ -155,7 +158,7 @@ fmt.Printf("trans, pos: %d\n", pos)
 func Online(pos int, mypos int) {
 
 	CurrElev[pos].Position = pos
-	CurrElev[pos].FirstTime = true //må kanskje slettes
+
 }
 
 func OnRequestButtonPress(btn_floor int, btn_type elevio.ButtonType, pos int, activeElevs int, mypos int) {
@@ -226,11 +229,12 @@ func OnFloorArrival(newFloor int, pos int, activeElevs int, mypos int) {
 	CurrElev[pos].Floor = newFloor
 	elevio.SetFloorIndicator(CurrElev[mypos].Floor)
 	if CurrElev[pos].FirstTime {
-
+		fmt.Printf("Lone er kul 2\n")
 		CurrElev[pos].State = elevio.Moving
 		CurrElev[pos].Dir = elevio.MD_Down
 
 		if newFloor == 0 {
+			fmt.Printf("Lone er kul 3\n")
 			CurrElev[pos].State = elevio.Idle
 			CurrElev[pos].Dir = elevio.MD_Stop
 			if pos == mypos {
@@ -275,7 +279,10 @@ func OnFloorArrival(newFloor int, pos int, activeElevs int, mypos int) {
 		}
 	}
 	if newFloor == 0 {
+
 		CurrElev[pos].FirstTime = false
+		fmt.Printf("pos: %d\n", pos)
+		fmt.Printf("Lone er kul 4\n")
 	}
 }
 

@@ -59,6 +59,12 @@ func main() {
 	flag.StringVar(&id, "id", "", "id of this peer")
 	flag.Parse()
 
+	var sentmsg = ElevMsg{}
+	sentmsg.Msgtype = -1
+	sentmsg.ElevList = fsm.CurrElev
+	var ackmsg = AckMsg{}
+	var CorrectAck bool = false
+
 	peerUpdateCh := make(chan peers.PeerUpdate)
 	peerTxEnable := make(chan bool)
 	go peers.Transmitter(15231, string(id), peerTxEnable)
@@ -76,17 +82,18 @@ func main() {
 	var initialized bool = false
 	var pos int = -1
 
-	var sentmsg = ElevMsg{}
-	sentmsg.Msgtype = -1
-	sentmsg.ElevList = fsm.CurrElev
-	var ackmsg = AckMsg{}
-	var CorrectAck bool = false
+
 	//var MotorFailure bool
 
 	for {
 		select {
 		case a := <-drv_buttons:
+			fmt.Printf("pos: %d\n", pos)
+			fmt.Printf("firsttime: %d\n", fsm.CurrElev[pos].FirstTime)
+
+			fmt.Printf("Lone er kul buttons\n")
 			if pos != -1 && !fsm.CurrElev[pos].FirstTime {
+				fmt.Printf("Lone er kul first if\n")
 				if a.Button != 2 && activeElevs > 1 {
 
 					sentmsg.ButtonPushed[0] = a.Floor
@@ -103,7 +110,7 @@ func main() {
 
 				} else if a.Button == 2 {
 
-					//elevio.SetButtonLamp(a.Button, a.Floor, true)
+					elevio.SetButtonLamp(a.Button, a.Floor, true)
 					fsm.OnRequestButtonPress(a.Floor, a.Button, pos, activeElevs, pos)
 					backup.UpdateBackup(fsm.CurrElev[pos])
 					sentmsg.ButtonPushed[0] = a.Floor
@@ -127,6 +134,7 @@ func main() {
 			}
 
 		case a := <-drv_floors:
+			fmt.Printf("Lone er kul\n")
 			fsm.OnFloorArrival(a, pos, activeElevs, pos)
 
 			backup.UpdateBackup(fsm.CurrElev[pos])
@@ -145,7 +153,7 @@ func main() {
 			}
 
 		case p := <-peerUpdateCh:
-			fmt.Printf("Lone er kul\n")
+
 			peers.UpdatePeers(p)
 			prev := activeElevs
 			activeElevs = len(p.Peers)
@@ -157,7 +165,7 @@ func main() {
 				// 	fmt.Printf("initialized\n")
 				// 	initialized = false
 				// }
-				fmt.Printf("main, pos: %d\n", pos)
+
 
 				fsm.TransferRequests(lost, activeElevs, pos)
 				fsm.CopyInfo_Lost(lost, activeElevs)
@@ -209,8 +217,8 @@ func main() {
 			}
 
 			if a.Msgtype == 1 {
-				fsm.AddCabRequest(a.ListPos, a.ButtonPushed[0], pos)
 				if a.ListPos != pos {
+					fsm.AddCabRequest(a.ListPos, a.ButtonPushed[0], pos)
 					fsm.OnRequestButtonPress(a.ButtonPushed[0], elevio.ButtonType(a.ButtonPushed[1]), a.ListPos, activeElevs, pos)
 				}
 			}
