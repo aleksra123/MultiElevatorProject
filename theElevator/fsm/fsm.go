@@ -1,7 +1,7 @@
 package fsm
 
 import (
-	
+
 	"time"
 
 	"../costfunction"
@@ -78,9 +78,9 @@ func SetAllLights(es elevio.Elevator) {
 }
 func AddCabRequest(pos int, floor int, mypos int) {
 	CurrElev[pos].Requests[floor][elevio.BT_Cab] = true
-	if pos == mypos {
-	backup.UpdateBackup(CurrElev[pos])
-	}
+	// if pos == mypos {
+	// backup.UpdateBackup(CurrElev[pos])
+	// }
 }
 
 
@@ -159,7 +159,7 @@ func TransferRequests(lost int, activeElevs int, pos int) {
 func Online(pos int, mypos int){
 
 	CurrElev[pos].Position = pos
-	CurrElev[pos].FirstTime = true
+	CurrElev[pos].FirstTime = true //må kanskje slettes
 }
 
 
@@ -209,7 +209,7 @@ func OnRequestButtonPress(btn_floor int, btn_type elevio.ButtonType, pos int, ac
 			CurrElev[pos].Dir = requests.ChooseDirection(CurrElev[pos])
 			if pos == mypos {
 				elevio.SetMotorDirection(CurrElev[pos].Dir)
-				Power_timer.Reset(5 * time.Second)
+				Power_timer.Reset(5 * time.Second) //bruk 8 sek i stedet
 			}
 			CurrElev[pos].State = elevio.Moving
 
@@ -242,7 +242,7 @@ func OnFloorArrival(newFloor int, pos int, activeElevs int, mypos int) {
 		}
 	}
 	if pos == mypos && !CurrElev[pos].FirstTime{
-		Power_timer.Reset(5* time.Second)
+		Power_timer.Reset(5* time.Second) //bruk 8 sek i stedet
 	}
 
 	if requests.ShouldStop(CurrElev[pos]) && !CurrElev[pos].FirstTime {

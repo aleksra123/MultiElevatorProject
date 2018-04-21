@@ -10,7 +10,11 @@ import (
 	"./network/peers"
 	"./elevio"
 	"./fsm"
+<<<<<<< HEAD
 	"./backup"
+=======
+	//"./backup"
+>>>>>>> 2ebe88061e2fac879a9ca71ac160654bbb58aeed
 
 )
 //
@@ -158,7 +162,7 @@ func main() {
 				fsm.CopyInfo_Lost(lost, activeElevs)
 			}
 
-			if activeElevs > 1 {
+			if activeElevs > 1 { // && prev < activeElevs må ha med!
 				new, _ := strconv.Atoi(p.New)
 				fsm.CopyInfo_New(new, activeElevs )
 			}
@@ -178,7 +182,7 @@ func main() {
 						}
 					}
 					if !initialized {
-						fsm.Init(pos, activeElevs)
+						fsm.Init(pos, activeElevs) // må flyttes ???
 						initialized = true
 						sentmsg.Msgtype = 7
 						for i := 0; i < 10; i++ {
@@ -263,6 +267,7 @@ func main() {
 		   sentmsg.ListPos = pos
 			 sentmsg.Msgtype = 4
 			 msgTrans <- sentmsg
+
 
 		case <- drv_powerout:
 			fsm.Power_timer.Stop()
