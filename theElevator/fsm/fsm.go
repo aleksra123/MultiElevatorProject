@@ -143,7 +143,7 @@ func TransferRequests(lost int, activeElevs int, pos int) {
 			if CurrElev[lost-1].Requests[floor][button] {
 				index = costfunction.CostCalc(CurrElev, activeElevs, lost-1)
 
-				OnRequestButtonPress(floor, elevio.ButtonType(button), index+1, activeElevs, pos)
+				OnRequestButtonPress(floor, elevio.ButtonType(button), index, activeElevs, pos)
 
 			}
 		}
