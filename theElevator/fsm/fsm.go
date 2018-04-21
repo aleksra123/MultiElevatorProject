@@ -261,7 +261,7 @@ func OnFloorArrival(newFloor int, pos int, activeElevs int, mypos int) {
 			 SetAllLights(CurrElev[pos])
 		}
 		if !CurrElev[pos].FirstTime{
-			CurrElev[pos].Dir = elevio.MD_Stop
+			//CurrElev[pos].Dir = elevio.MD_Stop
 
 			CurrElev[pos].State = elevio.DoorOpen
 			if pos == mypos {
