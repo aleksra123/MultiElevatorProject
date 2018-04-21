@@ -2,19 +2,18 @@ package main
 
 import (
 	"flag"
-	"time"
-	"strconv"
 	"fmt"
+	"strconv"
+	"time"
 
-	"./network/bcast"
-	"./network/peers"
 	"./elevio"
 	"./fsm"
+	"./network/bcast"
+	"./network/peers"
 
 	"./backup"
-
-
 )
+
 //
 // This system consists of 6 modules. The network module, the fsm(finite state machine) module, the request module,
 // the elevio module and the costfunction module all have their roots in the given project resources material. However the fsm has been altered quite
@@ -28,7 +27,6 @@ func main() {
 	//elevio.Init(port, elevio.NumFloors) // this is nescessary to run the test.sh shell.
 	elevio.Init("localhost:15657", elevio.NumFloors)
 
-
 	drv_buttons := make(chan elevio.ButtonEvent)
 	drv_floors := make(chan int)
 	drv_obstr := make(chan bool)
@@ -39,16 +37,14 @@ func main() {
 	fsm.Door_timer.Stop()
 	fsm.Power_timer.Stop()
 
-
 	go elevio.PollButtons(drv_buttons)
 	go elevio.PollFloorSensor(drv_floors)
 	go elevio.PollObstructionSwitch(drv_obstr)
 	go elevio.PollStopButton(drv_stop)
 
-
 	type AckMsg struct {
 		Orgsender int
-		Receiver int
+		Receiver  int
 	}
 
 	type ElevMsg struct {
@@ -74,7 +70,7 @@ func main() {
 	msgAckT := make(chan AckMsg)
 	msgAckR := make(chan AckMsg)
 
-	go bcast.Transmitter(25000, msgTrans, msgAckT )
+	go bcast.Transmitter(25000, msgTrans, msgAckT)
 	go bcast.Receiver(25000, msgRec, msgAckR)
 
 	var initialized bool = false
@@ -90,22 +86,22 @@ func main() {
 	for {
 		select {
 		case a := <-drv_buttons:
-			if pos != -1 && !fsm.CurrElev[pos].FirstTime{
-				if a.Button != 2  && activeElevs > 1{
+			if pos != -1 && !fsm.CurrElev[pos].FirstTime {
+				if a.Button != 2 && activeElevs > 1 {
 
 					sentmsg.ButtonPushed[0] = a.Floor
 					sentmsg.ButtonPushed[1] = int(a.Button)
 					sentmsg.Msgtype = 3
 					for i := 0; i < 10; i++ {
 						msgTrans <- sentmsg
-						time.Sleep(5*time.Millisecond)
-						if  CorrectAck{
+						time.Sleep(5 * time.Millisecond)
+						if CorrectAck {
 							CorrectAck = false
 							break
 						}
 					}
 
-				} else if a.Button == 2{
+				} else if a.Button == 2 {
 
 					elevio.SetButtonLamp(a.Button, a.Floor, true)
 					fsm.OnRequestButtonPress(a.Floor, a.Button, pos, activeElevs, pos)
@@ -116,8 +112,8 @@ func main() {
 					sentmsg.Msgtype = 1
 					for i := 0; i < 10; i++ {
 						msgTrans <- sentmsg
-						time.Sleep(5*time.Millisecond)
-						if  CorrectAck{
+						time.Sleep(5 * time.Millisecond)
+						if CorrectAck {
 							CorrectAck = false
 							break
 						}
@@ -125,10 +121,10 @@ func main() {
 				}
 			}
 
-		case a := <- msgAckR:
-			if a.Orgsender == pos{
+		case a := <-msgAckR:
+			if a.Orgsender == pos {
 				CorrectAck = true
-				}
+			}
 
 		case a := <-drv_floors:
 			fsm.OnFloorArrival(a, pos, activeElevs, pos)
@@ -139,13 +135,12 @@ func main() {
 			sentmsg.ElevList[pos].Floor = a
 			for i := 0; i < 10; i++ {
 				msgTrans <- sentmsg
-				time.Sleep(5*time.Millisecond)
-				if  CorrectAck{
+				time.Sleep(5 * time.Millisecond)
+				if CorrectAck {
 					CorrectAck = false
 					break
 				}
 			}
-
 
 		case p := <-peerUpdateCh:
 			fmt.Printf("Lone er kul\n")
@@ -155,14 +150,14 @@ func main() {
 			var teller int
 
 			if prev > activeElevs && prev < activeElevs {
-				lost, _ :=  strconv.Atoi(p.Lost[0])
+				lost, _ := strconv.Atoi(p.Lost[0])
 				fsm.TransferRequests(lost, activeElevs, pos)
 				fsm.CopyInfo_Lost(lost, activeElevs)
 			}
 
-			if activeElevs > 1 { // && prev < activeElevs må ha med!
+			if activeElevs > 1 && prev < activeElevs {
 				new, _ := strconv.Atoi(p.New)
-				fsm.CopyInfo_New(new, activeElevs )
+				fsm.CopyInfo_New(new, activeElevs)
 			}
 
 			for _, i := range p.Peers {
@@ -173,8 +168,8 @@ func main() {
 					sentmsg.ElevList[pos].Position = pos
 					for i := 0; i < 10; i++ {
 						msgTrans <- sentmsg
-						time.Sleep(5*time.Millisecond)
-						if  CorrectAck{
+						time.Sleep(5 * time.Millisecond)
+						if CorrectAck {
 							CorrectAck = false
 							break
 						}
@@ -185,8 +180,8 @@ func main() {
 						sentmsg.Msgtype = 7
 						for i := 0; i < 10; i++ {
 							msgTrans <- sentmsg
-							time.Sleep(5*time.Millisecond)
-							if  CorrectAck{
+							time.Sleep(5 * time.Millisecond)
+							if CorrectAck {
 								CorrectAck = false
 								break
 							}
@@ -197,14 +192,12 @@ func main() {
 			}
 			teller = 0
 
-
 		case a := <-msgRec:
 			ackmsg.Orgsender = a.ListPos
 			ackmsg.Receiver = pos
 			for i := 0; i < 5; i++ {
-			 	msgAckT <- ackmsg
+				msgAckT <- ackmsg
 			}
-
 
 			if a.Msgtype == 1 {
 				fsm.AddCabRequest(a.ListPos, a.ButtonPushed[0], pos)
@@ -219,7 +212,7 @@ func main() {
 				}
 			}
 
-			if a.Msgtype == 3{
+			if a.Msgtype == 3 {
 				for i := 0; i < activeElevs; i++ {
 					sentmsg.ElevList[i].AcceptedOrders[a.ButtonPushed[0]][a.ButtonPushed[1]] = 1
 					a.ElevList[i].AcceptedOrders[a.ButtonPushed[0]][a.ButtonPushed[1]] = 1
@@ -229,7 +222,7 @@ func main() {
 
 			if a.Msgtype == 4 {
 				if a.ListPos != pos {
-				fsm.OnDoorTimeout(a.ListPos, pos )
+					fsm.OnDoorTimeout(a.ListPos, pos)
 				}
 			}
 
@@ -261,18 +254,15 @@ func main() {
 			//requests.choosedir ??
 
 		case <-drv_timeout:
-			 fsm.OnDoorTimeout(pos,pos)
-		   sentmsg.ListPos = pos
-			 sentmsg.Msgtype = 4
-			 msgTrans <- sentmsg
+			fsm.OnDoorTimeout(pos, pos)
+			sentmsg.ListPos = pos
+			sentmsg.Msgtype = 4
+			msgTrans <- sentmsg
 
-
-		case <- drv_powerout:
+		case <-drv_powerout:
 			fsm.Power_timer.Stop()
 			peerTxEnable <- false
 			return
-
-
 
 		}
 	}
