@@ -149,7 +149,7 @@ func main() {
 			activeElevs = len(p.Peers)
 			var teller int
 
-			if prev > activeElevs && prev < activeElevs {
+			if prev > activeElevs  {
 				lost, _ := strconv.Atoi(p.Lost[0])
 				fsm.TransferRequests(lost, activeElevs, pos)
 				fsm.CopyInfo_Lost(lost, activeElevs)
