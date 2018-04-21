@@ -4,11 +4,15 @@ import (
 	"flag"
 	"time"
 	"strconv"
+	"fmt"
 
 	"./network/bcast"
 	"./network/peers"
 	"./elevio"
 	"./fsm"
+
+	"./backup"
+
 
 )
 //
@@ -81,7 +85,7 @@ func main() {
 	sentmsg.ElevList = fsm.CurrElev
 	var ackmsg = AckMsg{}
 	var CorrectAck bool = false
-	var MotorFailure bool
+	//var MotorFailure bool
 
 	for {
 		select {
@@ -104,7 +108,8 @@ func main() {
 				} else if a.Button == 2{
 
 					elevio.SetButtonLamp(a.Button, a.Floor, true)
-
+					fsm.OnRequestButtonPress(a.Floor, a.Button, pos, activeElevs, pos)
+					backup.UpdateBackup(fsm.CurrElev[pos])
 					sentmsg.ButtonPushed[0] = a.Floor
 					sentmsg.ButtonPushed[1] = int(a.Button)
 					sentmsg.ListPos = pos
@@ -126,6 +131,7 @@ func main() {
 				}
 
 		case a := <-drv_floors:
+			fsm.OnFloorArrival(a, pos, activeElevs, pos)
 			sentmsg.Msgtype = 2
 			if pos != -1 {
 				sentmsg.ListPos = pos
@@ -139,24 +145,22 @@ func main() {
 					break
 				}
 			}
-			if MotorFailure{
-				peerTxEnable <- true
-				MotorFailure = false
-			}
+
 
 		case p := <-peerUpdateCh:
+			fmt.Printf("Lone er kul\n")
 			peers.UpdatePeers(p)
 			prev := activeElevs
 			activeElevs = len(p.Peers)
 			var teller int
 
-			if prev > activeElevs  {
+			if prev > activeElevs && prev < activeElevs {
 				lost, _ :=  strconv.Atoi(p.Lost[0])
 				fsm.TransferRequests(lost, activeElevs, pos)
 				fsm.CopyInfo_Lost(lost, activeElevs)
 			}
 
-			if activeElevs > 1 {
+			if activeElevs > 1 { // && prev < activeElevs må ha med!
 				new, _ := strconv.Atoi(p.New)
 				fsm.CopyInfo_New(new, activeElevs )
 			}
@@ -176,7 +180,7 @@ func main() {
 						}
 					}
 					if !initialized {
-						fsm.Init(pos, activeElevs)
+						fsm.Init(pos, activeElevs) // må flyttes ???
 						initialized = true
 						sentmsg.Msgtype = 7
 						for i := 0; i < 10; i++ {
@@ -197,17 +201,22 @@ func main() {
 		case a := <-msgRec:
 			ackmsg.Orgsender = a.ListPos
 			ackmsg.Receiver = pos
-			msgAckT <- ackmsg
+			for i := 0; i < 5; i++ {
+			 	msgAckT <- ackmsg
+			}
 
 
 			if a.Msgtype == 1 {
 				fsm.AddCabRequest(a.ListPos, a.ButtonPushed[0], pos)
-
-				fsm.OnRequestButtonPress(a.ButtonPushed[0], elevio.ButtonType(a.ButtonPushed[1]), a.ListPos, activeElevs, pos)
+				if a.ListPos != pos {
+					fsm.OnRequestButtonPress(a.ButtonPushed[0], elevio.ButtonType(a.ButtonPushed[1]), a.ListPos, activeElevs, pos)
+				}
 			}
 
 			if a.Msgtype == 2 {
-				fsm.OnFloorArrival(a.ElevList[a.ListPos].Floor, a.ListPos, activeElevs, pos)
+				if a.ListPos != pos {
+					fsm.OnFloorArrival(a.ElevList[a.ListPos].Floor, a.ListPos, activeElevs, pos)
+				}
 			}
 
 			if a.Msgtype == 3{
@@ -219,7 +228,9 @@ func main() {
 			}
 
 			if a.Msgtype == 4 {
+				if a.ListPos != pos {
 				fsm.OnDoorTimeout(a.ListPos, pos )
+				}
 			}
 
 			if a.Msgtype == 5 {
@@ -238,24 +249,26 @@ func main() {
 		case a := <-drv_obstr:
 			if a {
 				elevio.SetMotorDirection(elevio.MD_Stop)
-				fsm.Power_timer.Stop()
+				//fsm.Power_timer.Stop()
 			}
 
 		case a := <-drv_stop:
 			if a {
 				elevio.SetMotorDirection(elevio.MD_Stop)
 				fsm.Power_timer.Stop()
+				//fsm.CurrElev[pos] = elevio.Idle ?
 			}
+			//requests.choosedir ??
 
 		case <-drv_timeout:
+			 fsm.OnDoorTimeout(pos,pos)
 		   sentmsg.ListPos = pos
 			 sentmsg.Msgtype = 4
 			 msgTrans <- sentmsg
 
+
 		case <- drv_powerout:
 			fsm.Power_timer.Stop()
-			MotorFailure = true
-			initialized = false
 			peerTxEnable <- false
 			return
 
