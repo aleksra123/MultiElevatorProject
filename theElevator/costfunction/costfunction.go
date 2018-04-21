@@ -1,9 +1,10 @@
 package costfunction
 
 import (
+	"math"
+
 	"../elevio"
 	"../requests"
-	"math"
 )
 
 var TRAVEL_TIME float64 = 2.5
@@ -28,7 +29,7 @@ func timeToIdle(e elevio.Elevator) float64 {
 		for floor := 0; floor < elevio.NumFloors; floor++ {
 			for button := 0; button < elevio.NumButtons-1; button++ {
 				if e.AcceptedOrders[floor][button] == 1 {
-					duration = duration + math.Abs(float64(e.Floor - floor))
+					duration = duration + math.Abs(float64(e.Floor-floor))
 				}
 			}
 		}
@@ -59,7 +60,7 @@ func timeToIdle(e elevio.Elevator) float64 {
 	}
 }
 
-func CostCalc(elevlist [elevio.NumElevators]elevio.Elevator, activeElevators int , lost int) int {
+func CostCalc(elevlist [elevio.NumElevators]elevio.Elevator, activeElevators int, lost int) int {
 	var minCost float64 = 500
 	var index int
 	var time float64
