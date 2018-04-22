@@ -2,7 +2,7 @@ package main
 
 import (
 	"flag"
-	"fmt"
+	
 	"strconv"
 	"time"
 
@@ -88,12 +88,9 @@ func main() {
 	for {
 		select {
 		case a := <-drv_buttons:
-			fmt.Printf("pos: %d\n", pos)
-			fmt.Printf("firsttime: %d\n", fsm.CurrElev[pos].FirstTime)
-
-			fmt.Printf("Lone er kul buttons\n")
+			
 			if pos != -1 && !fsm.CurrElev[pos].FirstTime {
-				fmt.Printf("Lone er kul first if\n")
+				
 				if a.Button != 2 && activeElevs > 1 {
 
 					sentmsg.ButtonPushed[0] = a.Floor
@@ -134,7 +131,7 @@ func main() {
 			}
 
 		case a := <-drv_floors:
-			fmt.Printf("Lone er kul\n")
+			
 			fsm.OnFloorArrival(a, pos, activeElevs, pos)
 
 			backup.UpdateBackup(fsm.CurrElev[pos])
@@ -161,10 +158,7 @@ func main() {
 
 			if prev > activeElevs  {
 				lost, _ := strconv.Atoi(p.Lost[0])
-				// if lost == pos+1 {
-				// 	fmt.Printf("initialized\n")
-				// 	initialized = false
-				// }
+				
 
 
 				fsm.TransferRequests(lost, activeElevs, pos)
@@ -270,7 +264,7 @@ func main() {
 			} else {
 				fsm.CurrElev[pos].State = elevio.Idle
 			}
-			//requests.choosedir ??
+			
 
 		case <-drv_timeout:
 			fsm.OnDoorTimeout(pos, pos)
