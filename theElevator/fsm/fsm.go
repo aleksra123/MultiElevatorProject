@@ -120,20 +120,24 @@ func CopyInfo_New(new int, activeElevs int) {
 
 	for i := 1; i < activeElevs+1; i++ {
 		if i == new {
-			CurrElev[new].AcceptedOrders = CurrElev[new-1].AcceptedOrders
-			CurrElev[new].Requests = CurrElev[new-1].Requests
-			CurrElev[new].State = CurrElev[new-1].State
-			CurrElev[new].Dir = CurrElev[new-1].Dir
-			CurrElev[new].Position = CurrElev[new-1].Position
-			CurrElev[new].Floor = CurrElev[new-1].Floor
-		} else if i > new {
-			CurrElev[new+1].AcceptedOrders = CurrElev[new].AcceptedOrders
-			CurrElev[new+1].Requests = CurrElev[new].Requests
-			CurrElev[new+1].State = CurrElev[new].State
-			CurrElev[new+1].Dir = CurrElev[new].Dir
-			CurrElev[new+1].Position = CurrElev[new].Position
-			CurrElev[new+1].Floor = CurrElev[new].Floor
+			for j := activeElevs-1; j > new-1; j--{
+				CurrElev[j] = CurrElev[j-1]
+			}
 		}
+		// 	CurrElev[new].AcceptedOrders = CurrElev[new-1].AcceptedOrders
+		// 	CurrElev[new].Requests = CurrElev[new-1].Requests
+		// 	CurrElev[new].State = CurrElev[new-1].State
+		// 	CurrElev[new].Dir = CurrElev[new-1].Dir
+		// 	CurrElev[new].Position = CurrElev[new-1].Position
+		// 	CurrElev[new].Floor = CurrElev[new-1].Floor
+		// } else if i > new {
+		// 	CurrElev[new+1].AcceptedOrders = CurrElev[new].AcceptedOrders
+		// 	CurrElev[new+1].Requests = CurrElev[new].Requests
+		// 	CurrElev[new+1].State = CurrElev[new].State
+		// 	CurrElev[new+1].Dir = CurrElev[new].Dir
+		// 	CurrElev[new+1].Position = CurrElev[new].Position
+		// 	CurrElev[new+1].Floor = CurrElev[new].Floor
+		// }
 	}
 }
 
@@ -180,7 +184,7 @@ func OnRequestButtonPress(btn_floor int, btn_type elevio.ButtonType, pos int, ac
 		}
 
 	case elevio.Moving:
-		
+
 		CurrElev[pos].Requests[btn_floor][btn_type] = true
 
 	case elevio.Idle:
