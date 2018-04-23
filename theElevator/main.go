@@ -2,9 +2,10 @@ package main
 
 import (
 	"flag"
-	
+
 	"strconv"
 	"time"
+	
 
 	"./elevio"
 	"./fsm"
@@ -88,9 +89,9 @@ func main() {
 	for {
 		select {
 		case a := <-drv_buttons:
-			
+
 			if pos != -1 && !fsm.CurrElev[pos].FirstTime {
-				
+
 				if a.Button != 2 && activeElevs > 1 {
 
 					sentmsg.ButtonPushed[0] = a.Floor
@@ -131,7 +132,7 @@ func main() {
 			}
 
 		case a := <-drv_floors:
-			
+
 			fsm.OnFloorArrival(a, pos, activeElevs, pos)
 
 			backup.UpdateBackup(fsm.CurrElev[pos])
@@ -158,7 +159,7 @@ func main() {
 
 			if prev > activeElevs  {
 				lost, _ := strconv.Atoi(p.Lost[0])
-				
+
 
 
 				fsm.TransferRequests(lost, activeElevs, pos)
@@ -173,7 +174,7 @@ func main() {
 			for _, i := range p.Peers {
 				if i == id {
 					pos = teller
-					fmt.Printf("main, pos: %d\n", pos)
+
 					sentmsg.ListPos = pos
 					sentmsg.Msgtype = 6
 					sentmsg.ElevList[pos].Position = pos
@@ -264,7 +265,7 @@ func main() {
 			} else {
 				fsm.CurrElev[pos].State = elevio.Idle
 			}
-			
+
 
 		case <-drv_timeout:
 			fsm.OnDoorTimeout(pos, pos)

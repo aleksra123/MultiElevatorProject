@@ -26,7 +26,7 @@ func RecievedMSG(floor int, button int, pos int, e elevio.Elevator, activeE int,
 		for i := 0; i < activeE; i++ {
 			CurrElev[i].AcceptedOrders[floor][button] = e.AcceptedOrders[floor][button]
 		}
-		index = costfunction.CostCalc(CurrElev, activeE, -1)
+		index = costfunction.CostCalc(CurrElev, activeE, -1, floor)
 		CurrElev[index].Requests[floor][button] = true
 		if index == mypos {
 
@@ -84,6 +84,7 @@ func Init(pos int, activeElevs int) {
 	elevio.SetMotorDirection(elevio.MD_Down)
 	CurrElev[pos].Requests = backup.ReadBackup(CurrElev[pos]).Requests
 	var empty elevio.Elevator
+	SetHallLights(empty)
 	backup.UpdateBackup(empty)
 	CurrElev[pos].State = elevio.Moving //
 	CurrElev[pos].Dir = elevio.MD_Down  // failsafes in case of package loss
@@ -146,7 +147,7 @@ func TransferRequests(lost int, activeElevs int, pos int) {
 	for floor := 0; floor < elevio.NumFloors; floor++ {
 		for button := 0; button < elevio.NumButtons-1; button++ {
 			if CurrElev[lost-1].Requests[floor][button] {
-				index = costfunction.CostCalc(CurrElev, activeElevs+1, lost-1)
+				index = costfunction.CostCalc(CurrElev, activeElevs+1, lost-1, floor)
 
 				OnRequestButtonPress(floor, elevio.ButtonType(button), index, activeElevs, pos)
 

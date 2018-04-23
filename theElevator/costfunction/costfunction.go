@@ -60,7 +60,7 @@ func timeToIdle(e elevio.Elevator) float64 {
 	}
 }
 
-func CostCalc(elevlist [elevio.NumElevators]elevio.Elevator, activeElevators int, lost int) int {
+func CostCalc(elevlist [elevio.NumElevators]elevio.Elevator, activeElevators int, lost int, floor int) int {
 	var minCost float64 = 500
 	var index int
 	var time float64
@@ -68,6 +68,10 @@ func CostCalc(elevlist [elevio.NumElevators]elevio.Elevator, activeElevators int
 		// elevlist[i].State = 0
 		if i != lost {
 			time = timeToIdle(elevlist[i])
+			// if elevlist[i].Requests[e.Floor][elevio.BT_HallUp] || elevlist[i].Requests[e.Floor][elevio.BT_HallDown] {
+			// 	time = 200
+			// }
+
 			if time < minCost {
 				minCost = time
 				index = i
