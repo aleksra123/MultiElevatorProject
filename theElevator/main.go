@@ -5,7 +5,7 @@ import (
 
 	"strconv"
 	"time"
-	
+
 
 	"./elevio"
 	"./fsm"
@@ -271,7 +271,14 @@ func main() {
 			fsm.OnDoorTimeout(pos, pos)
 			sentmsg.ListPos = pos
 			sentmsg.Msgtype = 4
-			msgTrans <- sentmsg
+			for i := 0; i < 10; i++ {
+				msgTrans <- sentmsg
+				time.Sleep(5 * time.Millisecond)
+				if CorrectAck {
+					CorrectAck = false
+					break
+				}
+			}
 
 		case <-drv_powerout:
 			fsm.Power_timer.Stop()
